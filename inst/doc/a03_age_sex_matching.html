@@ -352,9 +352,8 @@ function.</p>
 DrugUtilisation package to create mock data.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(DrugUtilisation)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockDrugUtilisation</span>(<span class="at">numberIndividual =</span> <span class="dv">1000</span>)</span></code></pre></div>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockCohortConstructor</span>(<span class="at">nPerson =</span> <span class="dv">1000</span>)</span></code></pre></div>
 <p>As we will use <code>cohort1</code> to explore
 <code>generateMatchedCohortSet()</code>, let us first use
 <code>cohort_attrition()</code> from CDMConnector package to explore

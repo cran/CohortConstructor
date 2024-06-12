@@ -7,9 +7,8 @@ knitr::opts_chunk$set(
 ## ----setup, message = FALSE, warning = FALSE, eval = FALSE--------------------
 #  library(CohortConstructor)
 #  library(dplyr)
-#  library(DrugUtilisation)
 #  
-#  cdm <- mockDrugUtilisation(numberIndividual = 1000)
+#  cdm <- mockCohortConstructor(nPerson = 1000)
 
 ## ----eval = FALSE-------------------------------------------------------------
 #  CDMConnector::cohort_set(cdm$cohort1)

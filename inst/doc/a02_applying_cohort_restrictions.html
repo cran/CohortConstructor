@@ -436,38 +436,40 @@ records where cohort entry was between a particular date range.</p>
 <h2>Restrictions on cohort presence</h2>
 <p>We could require that individuals in our medication cohorts have a
 history of GI bleed. To do this we can use the
-<code>requireCohortIntersectFlag()</code> function.</p>
+<code>requireCohortIntersect()</code> function, requiring that
+individuals have one or more intersections with the GI bleed cohort.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications  <span class="sc">%&gt;%</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersectFlag</span>(<span class="at">targetCohortTable =</span> <span class="st">&quot;gi_bleed&quot;</span>, </span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                             <span class="at">targetCohortId =</span> <span class="dv">1</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                             <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                             <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">compute</span>(<span class="at">temporary =</span> <span class="cn">FALSE</span>, <span class="at">name =</span> <span class="st">&quot;medications_gi_bleed&quot;</span>)</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>medications_gi_bleed)</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id number_records number_subjects</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;          &lt;int&gt;           &lt;int&gt;</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 1                    1              0               0</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 2                    2              7               7</span></span></code></pre></div>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersect</span>(<span class="at">intersections =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="cn">Inf</span>),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                         <span class="at">targetCohortTable =</span> <span class="st">&quot;gi_bleed&quot;</span>, </span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                         <span class="at">targetCohortId =</span> <span class="dv">1</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;medications_gi_bleed&quot;</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>medications_gi_bleed)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id number_records number_subjects</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;          &lt;int&gt;           &lt;int&gt;</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 1                    1              0               0</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; 2                    2              7               7</span></span></code></pre></div>
 <p>Instead of requiring that individuals have history of GI bleed, we
 could instead require that they are don’t have any history of it. In
-this case we can again use the <code>requireCohortIntersectFlag()</code>
-function, but this time set the negate argument to FALSE to require
+this case we can again use the <code>requireCohortIntersect()</code>
+function, but this time set the intersections argument to 0 to require
 individuals’ absence in this other cohort rather than their presence in
 it.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications_no_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersectFlag</span>(<span class="at">targetCohortTable =</span> <span class="st">&quot;gi_bleed&quot;</span>, </span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                             <span class="at">targetCohortId =</span> <span class="dv">1</span>,</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                             <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                             <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>                             <span class="at">negate =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">compute</span>(<span class="at">temporary =</span> <span class="cn">FALSE</span>, <span class="at">name =</span> <span class="st">&quot;medications_no_gi_bleed&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersect</span>(<span class="at">intersections =</span> <span class="dv">0</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                         <span class="at">targetCohortTable =</span> <span class="st">&quot;gi_bleed&quot;</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                         <span class="at">targetCohortId =</span> <span class="dv">1</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;medications_no_gi_bleed&quot;</span>) </span>
 <span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>medications_no_gi_bleed)</span>
 <span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
 <span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id number_records number_subjects</span></span>
 <span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;          &lt;int&gt;           &lt;int&gt;</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 1                    1              0               0</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 2                    2              0               0</span></span></code></pre></div>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 1                    1            179             179</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 2                    2             94              94</span></span></code></pre></div>
 </div>
 
 

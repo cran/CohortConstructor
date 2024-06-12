@@ -1,6 +1,8 @@
-#' Generate a new cohort matched cohort from a preexisting target cohort. The
-#' new cohort will contain individuals not included in the target cohort with
-#' same year of birth (matchYearOfBirth = TRUE) and same sex (matchSex = TRUE).
+#' Generate a new cohort matched cohort
+#'
+#' @description
+#' `matchCohorts()` generate a new cohort matched to individuals in an
+#' existing cohort. Individuals can be matched based on year of birth and sex.
 #'
 #' @param cohort A cohort table in a cdm reference.
 #' @param cohortId IDs of the cohorts to include. If NULL all cohorts will be
@@ -47,6 +49,15 @@ matchCohorts <- function(cohort,
   assertLogical(matchSex, length = 1)
   assertLogical(matchYearOfBirth, length = 1)
 
+  # Check if there are repeated people within the cohort
+  y <- cohort |>
+    dplyr::filter(.data$cohort_definition_id %in% cohortId) |>
+    dplyr::group_by(.data$cohort_definition_id, .data$subject_id) |>
+    dplyr::filter(dplyr::n() >= 2) |> dplyr::ungroup() |> dplyr::tally() |> dplyr::pull()
+  if(y != 0){
+    cli::cli_warn("Multiple records per person detected. The matchCohorts() function is designed to operate under the assumption that there is only one record per person within each cohort. If this assumption is not met, each record will be treated independently. As a result, the same individual may be matched multiple times, leading to inconsistent and potentially misleading results.")
+  }
+
   # table prefix
   tablePrefix <- omopgenerics::tmpPrefix()
   target <- omopgenerics::uniqueTableName(tablePrefix)
@@ -62,7 +73,7 @@ matchCohorts <- function(cohort,
   # create target cohort
   cli::cli_inform(c("i" = "Creating copy of target cohort."))
   cdm[[target]] <- subsetCohorts(
-    cohort = cohort, cohortId = cohortId, name = target
+    cohort = cohort, cohortId = cohortId, minCohortCount = 0, name = target
   )
 
   # get target cohort id
@@ -279,12 +290,10 @@ excludeNoMatchedIndividuals <- function(cdm, target, control, matchCols, tablePr
 
 addRandPairId <- function(x) {
   x %>%
-    dplyr::mutate("id" = stats::runif()) %>%
-    dplyr::group_by(.data$group_id) %>%
+    dplyr::mutate("id" = stats::runif(n = dplyr::n())) %>%
     dplyr::arrange(.data$id) %>%
-    dplyr::mutate("pair_id" = dplyr::row_number()) %>%
+    dplyr::mutate("pair_id" = dplyr::row_number(), .by = "group_id") %>%
     dplyr::select(-"id") %>%
-    dplyr::ungroup() %>%
     dplyr::compute(name = omopgenerics::tableName(x), temporary = FALSE)
 }
 addClusterId <- function(x, u) {
@@ -376,7 +385,7 @@ observationTarget <- function(cdm, target, control) {
 checkRatio <- function(x, ratio) {
   if (!is.infinite(ratio)) {
     x <- x %>%
-      dplyr::mutate("id" = stats::runif()) %>%
+      dplyr::mutate("id" = stats::runif(n = dplyr::n())) %>%
       dplyr::group_by(.data$cluster_id) %>%
       dplyr::arrange(.data$id) %>%
       dplyr::filter(dplyr::row_number() <= .env$ratio) %>%

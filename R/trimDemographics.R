@@ -1,5 +1,9 @@
 #' Restrict cohort on patient demographics
 #'
+#' @description
+#' `trimDemographics()` resets the cohort start and end date based on the
+#' specified demographic criteria is satisfied.
+#'
 #' @param cohort A cohort table in a cdm reference.
 #' @param cohortId IDs of the cohorts to modify. If NULL, all cohorts will be
 #' used; otherwise, only the specified cohorts will be modified, and the
@@ -37,12 +41,19 @@ trimDemographics <- function(cohort,
   cohort <- validateCohortTable(cohort, FALSE)
   ids <- settings(cohort)$cohort_definition_id
   cohortId <- validateCohortId(cohortId, ids)
-  ageRange <- validateDemographicRequirements(
-    ageRange, sex, minPriorObservation, minFutureObservation, null = TRUE
-  )
+  ageRange <- validateDemographicRequirements(ageRange = ageRange,
+                                              sex = sex,
+                                              minPriorObservation = minPriorObservation,
+                                              minFutureObservation = minFutureObservation,
+                                              null = TRUE)
   name <- validateName(name)
 
   cdm <- omopgenerics::cdmReference(cohort)
+
+  # replace age Inf to avoid potential sql issues
+  for(j in seq_along(ageRange)){
+    ageRange[[j]][is.infinite(ageRange[[j]])] <- as.integer(999)
+  }
 
   # temp tables
   tablePrefix <- omopgenerics::tmpPrefix()
@@ -58,14 +69,8 @@ trimDemographics <- function(cohort,
     dplyr::compute(name = tmpNewCohort, temporary = FALSE) |>
     omopgenerics::newCohortTable(.softValidation = TRUE)
 
-
-  if (!is.null(ageRange)) {
-    cli::cli_inform(c("Adding birth date"))
-    newCohort <- newCohort |>
-      PatientProfiles::addDateOfBirth(name = "date_0") %>%
-      dplyr::mutate(!!!datesAgeRange(ageRange))
-  }
-  if (!is.null(minPriorObservation) |
+  if (!is.null(ageRange) |
+      !is.null(minPriorObservation) |
       !is.null(minFutureObservation) |
       !is.null(sex)) {
     cli::cli_inform(c("Adding demographics information"))
@@ -76,14 +81,20 @@ trimDemographics <- function(cohort,
         priorObservation = !is.null(minPriorObservation),
         priorObservationType = "date",
         futureObservation = !is.null(minFutureObservation),
-        futureObservationType = "date"
-      ) |>
-      dplyr::compute(name = tmpNewCohort, temporary = FALSE)
+        futureObservationType = "date",
+        dateOfBirth = TRUE,
+        dateOfBirthName = "date_0",
+        name = tmpNewCohort
+      )
   }
 
-  newSet <- reqDemographicsCohortSet(
-    settings(cohort), cohortId, ageRange, sex,
-    minPriorObservation, minFutureObservation, TRUE
+  newSet <- reqDemographicsCohortSet(set = settings(cohort),
+                                     targetIds = cohortId,
+                                     ageRange = ageRange,
+                                     sex = sex,
+                                     minPriorObservation = minPriorObservation,
+                                     minFutureObservation = minFutureObservation,
+                                     requirementInteractions = TRUE
   )
   # insert settings
   cdm <- omopgenerics::insertTable(cdm = cdm, name = tmpName, table = newSet)
@@ -139,6 +150,7 @@ trimDemographics <- function(cohort,
   if (!is.null(ageRange)) {
     cli::cli_inform(c("Trim age"))
     newCohort <- newCohort %>%
+      dplyr::mutate(!!!datesAgeRange(ageRange)) %>%
       dplyr::mutate(
         !!!caseAge(ageRange),
         "cohort_start_date" = dplyr::if_else(
@@ -300,33 +312,35 @@ datesAgeRange <- function(ageRange) {
 }
 
 caseAge <- function(age) {
-  prepareColStart <- function(x, col) {
-    num <- x |> unlist() |> unique() |> as.character() |> tolower()
-    x <- paste0("date_", num)
-    x <- paste0(".data$", col, " == ", num, " ~ .data$", x) |>
-      paste0(collapse = ",")
-    x <- paste0("dplyr::case_when(", x, ")") |>
-      rlang::parse_exprs() |>
-      rlang::set_names(c("new_cohort_start_date"))
-    return(x)
-  }
-  prepareColEnd <- function(x, col) {
-    num <- unique(unlist(x))
-    infFlag <- any(is.infinite(num))
-    num <- num[!is.infinite(num)]
-    x <- paste0(".data$", col, " == ", as.character(num), " ~ as.Date(local(CDMConnector::dateadd(date = 'date_", as.character(num+1) ,"', number = -1, interval = 'day')))")
-    if (infFlag) {
-      x <- c(x, paste0("is.infinite(.data$", col, ") ~ .data$cohort_end_date"))
-    }
-    x <- paste0(x, collapse = ", ")
-    x <- paste0("dplyr::case_when(", x, ")") |>
-      rlang::parse_exprs() |>
-      rlang::set_names("new_cohort_end_date")
-    return(x)
-  }
   ageMin <- lapply(age, function(x){x[1]}) |>
     prepareColStart("min_age")
   ageMax <- lapply(age, function(x){x[2]}) |>
     prepareColEnd("max_age")
   c(ageMin, ageMax)
+}
+
+prepareColStart <- function(x, col) {
+  num <- x |> unlist() |> unique() |> as.character() |> tolower()
+  x <- paste0("date_", num)
+  x <- paste0(".data$", col, " == ", num, " ~ .data$", x) |>
+    paste0(collapse = ",")
+  x <- paste0("dplyr::case_when(", x, ")") |>
+    rlang::parse_exprs() |>
+    rlang::set_names(c("new_cohort_start_date"))
+  return(x)
+}
+
+prepareColEnd <- function(x, col) {
+  num <- unique(unlist(x))
+  infFlag <- any(is.infinite(num))
+  num <- num[!is.infinite(num)]
+  x <- paste0(".data$", col, " == ", as.character(num), " ~ as.Date(local(CDMConnector::dateadd(date = 'date_", as.character(num+1) ,"', number = -1, interval = 'day')))")
+  if (infFlag) {
+    x <- c(x, paste0("is.infinite(.data$", col, ") ~ .data$cohort_end_date"))
+  }
+  x <- paste0(x, collapse = ", ")
+  x <- paste0("dplyr::case_when(", x, ")") |>
+    rlang::parse_exprs() |>
+    rlang::set_names("new_cohort_end_date")
+  return(x)
 }

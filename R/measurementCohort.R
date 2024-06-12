@@ -1,5 +1,18 @@
-#' Create cohorts from the measurement table based on a concept set and
-#' required measurement values
+#' Create cohorts measurement based cohorts
+#'
+#' @description
+#' `measurementCohort()` creates cohorts based on patient records contained
+#' in the measurement table. This function extends the `conceptCohort()` as it
+#' allows for measurement values associated with the records to be specified.
+#'
+#' * If `valueAsConcept` and `valueAsNumber` are NULL then no requirements on
+#' of the values associated with measurement records and using
+#' `measurementCohort()` will lead to the same result as using `conceptCohort()`
+#' (so long as all concepts are from the measurement domain).
+#' * If one of `valueAsConcept` and `valueAsNumber` is not NULL then records
+#' will be required to have values that satisfy the requirement specified.
+#' * If both `valueAsConcept` and `valueAsNumber` are not NULL, records will
+#' be required to have values that fulfill _either_ of the requirements
 #'
 #' @param cdm A cdm reference.
 #' @param conceptSet A conceptSet, which can either be a codelist
@@ -15,14 +28,6 @@
 #' independently of their value as number will be included.
 #'
 #' @export
-#'
-#' @description
-#' This function creates cohorts from concepts in the measurement table. Value
-#' of the target measurements in `conceptSet` can be specified through
-#' `valueAsConcept` and `valueAsNumber`. If both NULL, conceptSets will not be
-#' restricted to any value, if one of them is not NULL, value restrictions will
-#' be based on the non NULL entry, and if both are specified, concepts
-#' fulfilling one OR the other will be included.
 #'
 #' @return A cohort table
 #'
@@ -130,7 +135,8 @@ measurementCohort <- function(cdm,
         dplyr::select("concept_id", "cohort_definition_id"),
       by = "concept_id"
     ) |>
-    dplyr::filter(!is.na(.data$cohort_start_date))
+    dplyr::filter(!is.na(.data$cohort_start_date)) |>
+    dplyr::compute(name = name, temporary = FALSE)
 
   if (!is.null(valueAsConcept)) {
     value <- cohort |> dplyr::pull("value_as_concept_id") |> unique()
@@ -162,7 +168,7 @@ measurementCohort <- function(cdm,
 
   if (cohort |> dplyr::tally() |> dplyr::pull("n") == 0) {
     cli::cli_inform(c("i" = "No table could be subsetted, returning empty cohort."))
-    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name) # TODO: overwritte to TRUE when omopgenerics in CRAN
+    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
     cdm[[name]] <- cdm[[name]] |>
       omopgenerics::newCohortTable(
         cohortSetRef = cohortSet,
@@ -171,9 +177,6 @@ measurementCohort <- function(cdm,
       )
     return(cdm[[name]])
   }
-
-  cohort <- cohort |>
-    dplyr::compute(name = name, temporary = FALSE) # To move after line 90 when omopgenerics in CRAN
 
   cli::cli_inform(c("i" = "Getting records in observation."))
   cohort <- cohort |>

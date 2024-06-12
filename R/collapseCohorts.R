@@ -1,5 +1,9 @@
 #' Collapse cohort entries using a certain gap to concatenate records.
 #'
+#' @description
+#' `collapseCohorts()` concatenates cohort records, allowing for some number
+#' of days between one finishing and the next starting.
+#'
 #' @param cohort A cohort table
 #' @param cohortId IDs of the cohorts to modify. If NULL, all cohorts will be
 #' used; otherwise, only the specified cohorts will be modified, and the
@@ -29,7 +33,7 @@ collapseCohorts <- function(cohort,
   tmpNewCohort <- omopgenerics::uniqueTableName(tablePrefix)
 
   if (all(ids %in% cohortId)) {
-    cohort <- cohort |>
+    newCohort <- cohort |>
       dplyr::compute(name = tmpNewCohort, temporary = FALSE) |>
       omopgenerics::newCohortTable(.softValidation = TRUE)
   } else {
@@ -37,20 +41,20 @@ collapseCohorts <- function(cohort,
     unchangedCohort <- cohort |>
       dplyr::filter(!.data$cohort_definition_id %in% .env$cohortId) |>
       dplyr::compute(name = tmpUnchanged, temporary = FALSE)
-    cohort <- cohort |>
+    newCohort <- cohort |>
       dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
       dplyr::compute(name = tmpNewCohort, temporary = FALSE)
   }
 
   if (gap > 0) {
-    cohort <- cohort |> joinOverlap(gap = gap)
+    newCohort <- newCohort |> joinOverlap(gap = gap)
   }
 
   if (!all(ids %in% cohortId)) {
-    cohort <- unchangedCohort |> dplyr::union_all(cohort)
+    newCohort <- unchangedCohort |> dplyr::union_all(newCohort)
   }
 
-  cohort <- cohort |>
+  newCohort <- newCohort |>
     dplyr::compute(name = name, temporary = FALSE) |>
     omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition(
@@ -60,5 +64,5 @@ collapseCohorts <- function(cohort,
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
-  return(cohort)
+  return(newCohort)
 }

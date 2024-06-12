@@ -64,20 +64,21 @@ cohort_attrition(cdm$medications) %>%
 
 ## -----------------------------------------------------------------------------
 cdm$medications_gi_bleed <- cdm$medications  %>%
-  requireCohortIntersectFlag(targetCohortTable = "gi_bleed", 
-                             targetCohortId = 1,
-                             indexDate = "cohort_start_date", 
-                             window = c(-Inf, 0)) %>% 
-  dplyr::compute(temporary = FALSE, name = "medications_gi_bleed")
+  requireCohortIntersect(intersections = c(1,Inf),
+                         targetCohortTable = "gi_bleed", 
+                         targetCohortId = 1,
+                         indexDate = "cohort_start_date", 
+                         window = c(-Inf, 0), 
+                         name = "medications_gi_bleed")
 cohort_count(cdm$medications_gi_bleed)
 
 ## -----------------------------------------------------------------------------
 cdm$medications_no_gi_bleed <- cdm$medications %>%
-  requireCohortIntersectFlag(targetCohortTable = "gi_bleed", 
-                             targetCohortId = 1,
-                             indexDate = "cohort_start_date", 
-                             window = c(-Inf, 0), 
-                             negate = TRUE) %>% 
-  dplyr::compute(temporary = FALSE, name = "medications_no_gi_bleed")
+  requireCohortIntersect(intersections = 0,
+                         targetCohortTable = "gi_bleed", 
+                         targetCohortId = 1,
+                         indexDate = "cohort_start_date", 
+                         window = c(-Inf, 0), 
+                         name = "medications_no_gi_bleed") 
 cohort_count(cdm$medications_no_gi_bleed)
 
