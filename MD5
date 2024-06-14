@@ -1,4 +1,4 @@
-c0160693f7682a995e32b51920e434b2 *DESCRIPTION
+65fd5e09769abb42ccae41d9821487b3 *DESCRIPTION
 370328939ee02daf00159479af423a34 *NAMESPACE
 78ad4a165d79c3591d0781618cab6030 *R/CohortConstructor-package.R
 2777ef41c36f39efcf15bf3b3fffeec2 *R/assertFunctions.R
@@ -13,13 +13,13 @@ f772177109923bc5e5f646855a5b054e *R/intersectCohorts.R
 9cccbbfc4caa32b5f352f11244623a66 *R/measurementCohort.R
 fcb39d15dc6012d6cc99322c7c54892b *R/mockCohortConstructor.R
 24dde39a45b8465ae29e3bbf10398557 *R/reexports.R
-af882646ae87f153c1f900f1d4125d04 *R/requireCohortIntersectFlag.R
-3fa68a6128bd9a408ae41c4af98ac2a2 *R/requireConceptIntersectFlag.R
+ecb2867dfd86c7fd0d9c1d3f2d8fb92d *R/requireCohortIntersectFlag.R
+bce79500f7f53a62090dd25edc57ac57 *R/requireConceptIntersectFlag.R
 1a89f66d2b32fc946b65215ce945fa3d *R/requireDateRange.R
 65d440467115971a987790d874e6f0f1 *R/requireDeathFlag.R
 f9d1c17be50deb0e98b0bbcb818e3353 *R/requireDemographics.R
 5ee7a498114788997cef0d8a43f49505 *R/requireIsFirstEntry.R
-dea06bd3063412dd516df1d6fdda05e4 *R/requireTableIntersectFlag.R
+8a2740b47ff31676e56a6dc887b3cdb2 *R/requireTableIntersectFlag.R
 edb7cb6600151e919b534e0fdfb811d3 *R/sampleCohorts.R
 a5ccaec25c5be19e23104872323fde28 *R/stratifyCohorts.R
 41999cfc848c0ae4f5b6f4b66ccbacc6 *R/subsetCohorts.R
@@ -36,7 +36,7 @@ aae659451dca0059c934706dfe2376de *inst/doc/a00_introduction.Rmd
 dbdc63d93516bd95c6e94c97bf88128c *inst/doc/a00_introduction.html
 15ebe45a1a95eb6195893f863550c89d *inst/doc/a01_building_base_cohorts.R
 c650e0f67e0a920271d81f3410caa725 *inst/doc/a01_building_base_cohorts.Rmd
-9d20d6779968786a415b2d935e78acea *inst/doc/a01_building_base_cohorts.html
+bbd62360957bbae252c4e45d510010ee *inst/doc/a01_building_base_cohorts.html
 adcdf390e393facfce2aa083ec97ec45 *inst/doc/a02_applying_cohort_restrictions.R
 7cb41021cfe0fefc04668c2dcc4e689c *inst/doc/a02_applying_cohort_restrictions.Rmd
 8fc3b6c4bfe32440fcd0d7d1a8ca76bd *inst/doc/a02_applying_cohort_restrictions.html
@@ -82,7 +82,7 @@ a638e99fb7783a13d7a83faf7af9e8ad *man/trimToDateRange.Rd
 dddb7c5da0122ff9a75be18ecc1eb770 *man/unionCohorts.Rd
 d3e2f59701f1a07fc1b75d3076fd94b2 *man/yearCohorts.Rd
 ab8cecb6bfd75669237b5dc0e40443fd *tests/testthat.R
-4b87625ec70695733095539b16512d98 *tests/testthat/setup.R
+09202fb502bd2db966cc93c5456f405c *tests/testthat/setup.R
 926d6ddb0473c10aee6dde570138cbd7 *tests/testthat/test-collapseCohorts.R
 e9d139150781037c784f5b2194ab7149 *tests/testthat/test-conceptCohort.R
 31a8740f31defc675d3d9754209be2d8 *tests/testthat/test-entryAtColumnDate.R
@@ -91,13 +91,13 @@ e9d139150781037c784f5b2194ab7149 *tests/testthat/test-conceptCohort.R
 61ebbbb5a6b989d9635fafba687e0092 *tests/testthat/test-intersectCohorts.R
 b491857dcbab12562fcbfad9495aef01 *tests/testthat/test-matchCohorts.R
 0c4ac2731ffd864dbf7c9c77e9efaed0 *tests/testthat/test-measurementCohort.R
-065848e7ef0772927b95096e5507d632 *tests/testthat/test-requireCohortIntersect.R
-b5240ee333637e9c1a88bde9448a7cd9 *tests/testthat/test-requireConceptIntersect.R
+18da03bc17da9c5d844fbf73905737f4 *tests/testthat/test-requireCohortIntersect.R
+7812a5fb421115b0335266919128ae2b *tests/testthat/test-requireConceptIntersect.R
 9c996722b9ece418e9946b5043bce967 *tests/testthat/test-requireDateRange.R
 e2435919d8f53378f1585ad993a13a58 *tests/testthat/test-requireDeathFlag.R
 8a0ee533d40974616e463c1c96afa0a3 *tests/testthat/test-requireDemographics.R
 8f8452f15e81aa2188b4e7849b7fc4c8 *tests/testthat/test-requireIsFirstEntry.R
-66fe57849d5e91e0743f307d298e497a *tests/testthat/test-requireTableIntersect.R
+374b775860e397d04d2df2ddbba7f8c8 *tests/testthat/test-requireTableIntersect.R
 236951f27797fd3956fab3c831959dfb *tests/testthat/test-sampleCohorts.R
 a6af53ee9ebe5fc9d5dbe8726ffaef1f *tests/testthat/test-stratifyCohorts.R
 8c57eee20f43f1c115ec7b46f8216bdf *tests/testthat/test-subsetCohorts.R
