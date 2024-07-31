@@ -50,21 +50,24 @@ conceptCohort <- function(cdm,
   # initial input validation
   cdm <- validateCdm(cdm)
   name <- validateName(name)
+  conceptSet <- validateConceptSet(conceptSet)
+
+  # empty concept set
+  cohortSet <- conceptSetToCohortSet(conceptSet, cdm)
   if (length(conceptSet) == 0) {
     cli::cli_inform(c("i" = "Empty codelist provided, returning empty cohort"))
     cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
+    cdm[[name]] <- cdm[[name]] |>
+      omopgenerics::newCohortTable(cohortSetRef = cohortSet)
     return(cdm[[name]])
   }
-  conceptSet <- validateConceptSet(conceptSet)
 
-  cohortSet <- conceptSetToCohortSet(conceptSet)
+  # codelist attribute
   cohortCodelist <- conceptSetToCohortCodelist(conceptSet)
-
   tableCohortCodelist <- omopgenerics::uniqueTableName()
   cdm <- uploadCohortCodelistToCdm(cdm = cdm,
                                    cohortCodelist = cohortCodelist,
-                                   tableCohortCodelist = tableCohortCodelist
-  )
+                                   tableCohortCodelist = tableCohortCodelist)
 
   # report codes from unsupported domains
   reportConceptsFromUnsopportedDomains(cdm = cdm,
@@ -73,12 +76,12 @@ conceptCohort <- function(cdm,
 
   # get cohort entries from omop records
   cdm[[name]] <- unerafiedConceptCohort(cdm = cdm,
-                                   conceptSet = conceptSet,
-                                   cohortSet = cohortSet,
-                                   cohortCodelist = cohortCodelist,
-                                   tableCohortCodelist = tableCohortCodelist,
-                                   name = name,
-                                   extraCols = NULL)
+                                        conceptSet = conceptSet,
+                                        cohortSet = cohortSet,
+                                        cohortCodelist = cohortCodelist,
+                                        tableCohortCodelist = tableCohortCodelist,
+                                        name = name,
+                                        extraCols = NULL)
 
   omopgenerics::dropTable(cdm = cdm,
                           name = tableCohortCodelist)
@@ -87,17 +90,21 @@ conceptCohort <- function(cdm,
   if(cdm[[name]] |>
      utils::head(1) |>
      dplyr::tally() |>
-     dplyr::pull("n") == 0){
-  cli::cli_inform(c("i" = "No cohort entries found, returning empty cohort table."))
-  cdm[[name]] <- cdm[[name]] |>
-    omopgenerics::newCohortTable(
-      cohortSetRef = cohortSet,
-      cohortAttritionRef = NULL,
-      cohortCodelistRef = cohortCodelist,
-      .softValidation = TRUE
-    )
+     dplyr::pull("n") == 0) {
+    cli::cli_inform(c("i" = "No cohort entries found, returning empty cohort table."))
+    cdm[[name]] <- cdm[[name]] |>
+      dplyr::select(
+        "cohort_definition_id", "subject_id", "cohort_start_date",
+        "cohort_end_date"
+      ) |>
+      omopgenerics::newCohortTable(
+        cohortSetRef = cohortSet,
+        cohortAttritionRef = NULL,
+        cohortCodelistRef = cohortCodelist,
+        .softValidation = TRUE
+      )
 
-  return(cdm[[name]])
+    return(cdm[[name]])
   }
 
   cli::cli_inform(c("i" = "Collapsing records."))
@@ -125,12 +132,12 @@ conceptCohort <- function(cdm,
 # note, entries may overlap, be out of observation, etc
 # we can keep extra columns from the omop tables (to use for measurement cohort etc)
 unerafiedConceptCohort <- function(cdm,
-                       conceptSet,
-                       cohortSet,
-                       cohortCodelist,
-                       tableCohortCodelist,
-                       name,
-                       extraCols){
+                                   conceptSet,
+                                   cohortSet,
+                                   cohortCodelist,
+                                   tableCohortCodelist,
+                                   name,
+                                   extraCols){
 
 
   domains <- sort(cdm[[tableCohortCodelist]] |>
@@ -213,7 +220,7 @@ unerafiedConceptCohort <- function(cdm,
 fulfillCohortReqs <- function(cdm, name){
   # if start is out of observation, drop cohort entry
   # if end is after observation end, set cohort end as observation end
- cdm[[name]] |>
+  cdm[[name]] |>
     PatientProfiles::addDemographics(
       age = FALSE,
       sex = FALSE,
@@ -227,15 +234,25 @@ fulfillCohortReqs <- function(cdm, name){
       .data$future_observation >= .data$cohort_end_date,
       .data$cohort_end_date, .data$future_observation)
     ) |>
-    dplyr::select(-"prior_observation",
-                  -"future_observation") |>
+    dplyr::select(
+      -"prior_observation", -"future_observation", -"concept_id"
+    ) |>
     joinOverlap(gap = 0)
 }
 
 
-conceptSetToCohortSet <- function(conceptSet){
-  dplyr::tibble("cohort_name" = names(conceptSet)) |>
-    dplyr::mutate("cohort_definition_id" = dplyr::row_number())
+conceptSetToCohortSet <- function(conceptSet, cdm){
+  cohSet <- dplyr::tibble("cohort_name" = names(conceptSet)) |>
+    dplyr::mutate(
+      "cohort_definition_id" = dplyr::row_number(),
+      "cdm_version" = attr(cdm, "cdm_version"),
+      "vocabulary_version" = CodelistGenerator::getVocabVersion(cdm)
+      )
+  if (length(conceptSet) == 0) {
+    cohSet <- cohSet |>
+      dplyr::mutate("cohort_name" = character())
+  }
+  return(cohSet)
 }
 
 conceptSetToCohortCodelist <- function(conceptSet){

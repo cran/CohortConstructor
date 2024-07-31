@@ -86,18 +86,21 @@ measurementCohort <- function(cdm,
   # initial input validation
   cdm <- validateCdm(cdm)
   name <- validateName(name)
-  if (length(conceptSet) == 0) {
-    cli::cli_inform(c("i" = "Empty codelist provided, returning empty cohort"))
-    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
-    return(cdm[[name]])
-  }
   conceptSet <- validateConceptSet(conceptSet)
   assertNumeric(valueAsConcept, integerish = TRUE, null = TRUE)
   validateValueAsNumber(valueAsNumber)
 
+  # empty concept set
+  cohortSet <- conceptSetToCohortSet(conceptSet, cdm)
+  if (length(conceptSet) == 0) {
+    cli::cli_inform(c("i" = "Empty codelist provided, returning empty cohort"))
+    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
+    cdm[[name]] <- cdm[[name]] |>
+      omopgenerics::newCohortTable(cohortSetRef = cohortSet)
+    return(cdm[[name]])
+  }
+
   # create concept set tibble
-  cohortSet <- dplyr::tibble("cohort_name" = names(conceptSet)) |>
-    dplyr::mutate("cohort_definition_id" = dplyr::row_number())
   cohortCodelist <- lapply(conceptSet, dplyr::as_tibble) |>
     dplyr::bind_rows(.id = "cohort_name") |>
     dplyr::inner_join(cohortSet, by = "cohort_name") |>
@@ -153,9 +156,8 @@ measurementCohort <- function(cdm,
 
   if (!is.null(valueAsNumber)) {
     unit <- cohort |> dplyr::pull("unit_concept_id") |> unique()
-    matches <-
-      as.numeric(names(valueAsNumber)) %in% as.numeric(unit)
-    matching_ids <- valueAsNumber[!matches]
+    matches <- as.numeric(names(valueAsNumber)) %in% as.numeric(unit)
+    matching_ids <- names(valueAsNumber)[!matches]
 
     if (length(matching_ids) > 0) {
       cli::cli_inform(c(
@@ -170,6 +172,10 @@ measurementCohort <- function(cdm,
     cli::cli_inform(c("i" = "No table could be subsetted, returning empty cohort."))
     cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
     cdm[[name]] <- cdm[[name]] |>
+      dplyr::select(
+        "cohort_definition_id", "subject_id", "cohort_start_date",
+        "cohort_end_date"
+      ) |>
       omopgenerics::newCohortTable(
         cohortSetRef = cohortSet,
         cohortAttritionRef = NULL,
@@ -201,9 +207,9 @@ measurementCohort <- function(cdm,
       dplyr::filter(!!!filterExpr) |>
       dplyr::compute(name = name, temporary = FALSE)
 
-  if (cohort |> dplyr::tally() |> dplyr::pull("n") == 0){
-    cli::cli_warn("There are no subjects with the specified value_as_concept_id or value_as_number.")
-  }
+    if (cohort |> dplyr::tally() |> dplyr::pull("n") == 0){
+      cli::cli_warn("There are no subjects with the specified value_as_concept_id or value_as_number.")
+    }
 
   }
 

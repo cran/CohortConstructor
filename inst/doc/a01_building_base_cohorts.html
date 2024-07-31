@@ -386,7 +386,7 @@ birthday and leave at age 65 or</p>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>            <span class="at">median_start_age =</span> <span class="fu">median</span>(age), </span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>            <span class="at">max_start_age =</span> <span class="fu">max</span>(age))</span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [1 x 3]</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v0.10.3-dev775 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\RtmpgHH2qN\file5b383dc01d2e.duckdb]</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmp69S0k5\file5a904a1f25e6.duckdb]</span></span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;   min_start_age median_start_age max_start_age</span></span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;           &lt;int&gt;            &lt;dbl&gt;         &lt;int&gt;</span></span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 1            17               18            18</span></span>
@@ -397,7 +397,7 @@ birthday and leave at age 65 or</p>
 <span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>            <span class="at">median_start_age =</span> <span class="fu">median</span>(age), </span>
 <span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>            <span class="at">max_start_age =</span> <span class="fu">max</span>(age))</span>
 <span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [1 x 3]</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v0.10.3-dev775 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\RtmpgHH2qN\file5b383dc01d2e.duckdb]</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmp69S0k5\file5a904a1f25e6.duckdb]</span></span>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   min_start_age median_start_age max_start_age</span></span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;           &lt;int&gt;            &lt;dbl&gt;         &lt;int&gt;</span></span>
 <span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; 1            31               57            65</span></span></code></pre></div>
@@ -410,24 +410,24 @@ birthday and leave at age 65 or</p>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>drug_codes</span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; - diclofenac (1 codes)</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; - acetaminophen (7 codes)</span></span></code></pre></div>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; - 161_acetaminophen (7 codes)</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; - 3355_diclofenac (1 codes)</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(<span class="at">cdm =</span> cdm, </span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                                 <span class="at">conceptSet =</span> drug_codes, </span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                                 <span class="at">name =</span> <span class="st">&quot;medications&quot;</span>)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>medications)</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 2</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id cohort_name  </span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt; &lt;chr&gt;        </span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 1                    1 diclofenac   </span></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 2                    2 acetaminophen</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 4</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id cohort_name       cdm_version vocabulary_version</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt; &lt;chr&gt;             &lt;chr&gt;       &lt;chr&gt;             </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 1                    1 161_acetaminophen 5.3         v5.0 18-JAN-19    </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 2                    2 3355_diclofenac   5.3         v5.0 18-JAN-19</span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medications)</span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
 <span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id number_records number_subjects</span></span>
 <span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;          &lt;int&gt;           &lt;int&gt;</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; 1                    1            830             830</span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; 2                    2          13908            2679</span></span></code></pre></div>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; 1                    1          13908            2679</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; 2                    2            830             830</span></span></code></pre></div>
 </div>
 <div id="concept-based-cohort-creation-for-measurements" class="section level2">
 <h2>Concept based cohort creation for measurements</h2>
