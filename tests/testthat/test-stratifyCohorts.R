@@ -49,11 +49,24 @@ test_that("simple stratification", {
     cdm$new_cohort <- cdm$cohort1 |>
       stratifyCohorts(
         strata = list(c("blood_type", "age_group"), "sex"),
+        removeStrata = FALSE,
         name = "new_cohort"
       )
   )
   # 3 cdi * 3 blood * 2 age + 3 cdi * 2 sex
   expect_true(cdm$new_cohort |> settings() |> nrow() == 24)
+
+  expect_no_error(
+    cdm$new_cohort_1 <- cdm$cohort1 |>
+      stratifyCohorts(
+        cohortId = "cohort_1",
+        strata = list(c("blood_type", "age_group"), "sex"),
+        removeStrata = FALSE,
+        name = "new_cohort_1"
+      )
+  )
+  # 3 cdi * 3 blood * 2 age + 3 cdi * 2 sex
+  expect_true(cdm$new_cohort_1 |> settings() |> nrow() == 8)
 
   cdi <- settings(cdm$new_cohort) |>
     dplyr::filter(.data$blood_type == "A" & .data$age_group == "adult")
@@ -73,6 +86,32 @@ test_that("simple stratification", {
   expect_true(all(attritionCdi$number_subjects == c(2, 2, 1, 2, 1, 0, 1, 0, 0)))
   expect_true(all(attritionCdi$excluded_records == c(0, 1, 1, 0, 1, 1, 0, 1, 0)))
   expect_true(all(attritionCdi$excluded_subjects == c(0, 0, 1, 0, 1, 1, 0, 1, 0)))
+  expect_equal(
+    colnames(cdm$new_cohort),
+    c('cohort_definition_id', 'subject_id', 'cohort_start_date', 'cohort_end_date',
+    'extra_column', 'blood_type', 'sex', 'age_group')
+    )
+
+  # test settings drop columns
+  expect_message(
+    cdm$new_cohort2 <- cdm$new_cohort |>
+      stratifyCohorts(
+        strata = list(c("blood_type", "age_group"), "sex"),
+        name = "new_cohort2"
+      )
+  )
+  expect_equal(
+    colnames(cdm$new_cohort2),
+    c('cohort_definition_id', 'subject_id', 'cohort_start_date', 'cohort_end_date', 'extra_column')
+  )
+
+  cdm$new_cohort3 <- cdm$new_cohort |>
+    stratifyCohorts(
+      cohortId = 1,
+      strata = list(),
+      name = "new_cohort3"
+    )
+  expect_equal(collectCohort(cdm$new_cohort2, 1), collectCohort(cdm$new_cohort3, 1))
 
   # empty cohort
   cdm <- omopgenerics::emptyCohortTable(cdm, "empty_cohort")

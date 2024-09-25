@@ -4,11 +4,10 @@
 #' `sampleCohorts()` samples an existing cohort table for a given number of
 #' people. All records of these individuals are preserved.
 #'
-#' @param cohort A cohort table in a cdm reference.
-#' @param cohortId IDs of the cohorts to include. If NULL all cohorts will be
-#' considered. Cohorts not included will not be sampled.
+#' @inheritParams cohortDoc
+#' @inheritParams cohortIdModifyDoc
+#' @inheritParams nameDoc
 #' @param n Number of people to be sampled for each included cohort.
-#' @param name Name of the new sampled cohort.
 #'
 #' @return Cohort table with the specified cohorts sampled.
 #'
@@ -27,10 +26,11 @@ sampleCohorts <- function(cohort,
                           n,
                           name = tableName(cohort)) {
   # checks
-  cohort <- validateCohortTable(cohort, TRUE)
-  cohortId <- validateCohortId(cohortId, settings(cohort)$cohort_definition_id)
+  name <- omopgenerics::validateNameArgument(name, validation = "warning")
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  cohortId <- validateCohortId(cohortId, settings(cohort))
   n <- validateN(n)
-  name <- validateName(name)
 
   cohort <- cohort |>
     dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
@@ -38,15 +38,17 @@ sampleCohorts <- function(cohort,
     dplyr::select("subject_id", "cohort_definition_id") |>
     dplyr::distinct() |>
     dplyr::slice_sample(n = n) |>
-    dplyr::left_join(cohort,
-                     by = c("subject_id", "cohort_definition_id")) |>
+    dplyr::left_join(cohort, by = c("subject_id", "cohort_definition_id")) |>
     dplyr::union_all(cohort |>
-                       dplyr::filter(!(.data$cohort_definition_id %in% .env$cohortId))) |>
+      dplyr::filter(!(
+        .data$cohort_definition_id %in% .env$cohortId
+      ))) |>
     dplyr::ungroup() |>
+    dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     omopgenerics::recordCohortAttrition(
-      reason = paste0("Sample ",n," individuals"),
+      reason = paste0("Sample ", n, " individuals"),
       cohortId = cohortId
-      ) |>
+    ) |>
     dplyr::compute(name = name, temporary = FALSE)
 
   return(cohort)

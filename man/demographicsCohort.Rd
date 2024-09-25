@@ -9,24 +9,20 @@ demographicsCohort(
   name,
   ageRange = NULL,
   sex = NULL,
-  minPriorObservation = NULL,
-  minFutureObservation = NULL
+  minPriorObservation = NULL
 )
 }
 \arguments{
 \item{cdm}{A cdm reference.}
 
-\item{name}{Name of the new cohort table}
+\item{name}{Name of the new cohort table created in the cdm object.}
 
 \item{ageRange}{A list of vectors specifying minimum and maximum age.}
 
 \item{sex}{Can be "Both", "Male" or "Female".}
 
-\item{minPriorObservation}{A minimum number of prior observation days in
-the database.}
-
-\item{minFutureObservation}{A minimum number of future observation days in
-the database.}
+\item{minPriorObservation}{A minimum number of continuous prior observation
+days in the database.}
 }
 \value{
 A cohort table
@@ -43,7 +39,8 @@ library(CohortConstructor)
 
 cdm <- mockCohortConstructor()
 
-cohort <-  cdm |> demographicsCohort(name = "cohort3", ageRange = c(18,40), sex = "Male")
+cohort <-  cdm |>
+    demographicsCohort(name = "cohort3", ageRange = c(18,40), sex = "Male")
 
 attrition(cohort)
 }

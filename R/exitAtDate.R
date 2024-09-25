@@ -4,11 +4,9 @@
 #' `exitAtObservationEnd()` resets cohort end date based on a set of specified
 #' column dates. The last date that occurs is chosen.
 #'
-#' @param cohort A cohort table in a cdm reference.
-#' @param cohortId IDs of the cohorts to modify. If NULL, all cohorts will be
-#' used; otherwise, only the specified cohorts will be modified, and the
-#' rest will remain unchanged.
-#' @param name Name of the new cohort with the restriction.
+#' @inheritParams cohortDoc
+#' @inheritParams cohortIdModifyDoc
+#' @inheritParams nameDoc
 #'
 #' @return The cohort table.
 #'
@@ -31,18 +29,14 @@ exitAtObservationEnd <- function(cohort,
                                  cohortId = NULL,
                                  name = tableName(cohort)) {
   # checks
-  name <- validateName(name)
   cohort <- validateCohortTable(cohort, dropExtraColumns = TRUE)
-  cdm <- omopgenerics::cdmReference(cohort)
-  validateCDM(cdm)
-  ids <- omopgenerics::settings(cohort)$cohort_definition_id
-  cohortId <- validateCohortId(cohortId, ids)
+  name <- omopgenerics::validateNameArgument(name, validation = "warning")
+  cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  cohortId <- validateCohortId(cohortId, settings(cohort))
 
   # create new cohort
   newCohort <- cohort |>
-    PatientProfiles::addFutureObservation(
-      futureObservationType = "date"
-    ) |>
+    PatientProfiles::addFutureObservation(futureObservationType = "date") |>
     # exit at observation end
     dplyr::mutate(
       "cohort_end_date" = dplyr::if_else(
@@ -51,14 +45,11 @@ exitAtObservationEnd <- function(cohort,
         .data$cohort_end_date
       )
     ) |>
-    # no overlapping periods
-    joinOverlap() |>
     dplyr::compute(name = name, temporary = FALSE) |>
+    # no overlapping periods
+    joinOverlap(name = name) |>
     omopgenerics::newCohortTable(.softValidation = TRUE) |>
-    omopgenerics::recordCohortAttrition(
-      reason = "Exit at observation period end date",
-      cohortId = cohortId
-    )
+    omopgenerics::recordCohortAttrition(reason = "Exit at observation period end date", cohortId = cohortId)
 
   return(newCohort)
 }
@@ -66,13 +57,11 @@ exitAtObservationEnd <- function(cohort,
 
 #' Set cohort end date to death date
 #'
-#' @param cohort A cohort table in a cdm reference.
-#' @param cohortId IDs of the cohorts to modify. If NULL, all cohorts will be
-#' used; otherwise, only the specified cohorts will be modified, and the
-#' rest will remain unchanged.
+#' @inheritParams cohortDoc
+#' @inheritParams cohortIdModifyDoc
+#' @inheritParams nameDoc
 #' @param requireDeath If TRUE, subjects without a death record will be dropped,
 #' while if FALSE their end date will be left as is.
-#' @param name Name of the new cohort with the restriction.
 #'
 #' @return The cohort table.
 #'
@@ -96,14 +85,11 @@ exitAtDeath <- function(cohort,
                         requireDeath = FALSE,
                         name = tableName(cohort)) {
   # checks
-  name <- validateName(name)
+  name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- validateCohortTable(cohort, dropExtraColumns = TRUE)
-  cdm <- omopgenerics::cdmReference(cohort)
-  validateCDM(cdm)
-  ids <- omopgenerics::settings(cohort)$cohort_definition_id
-  cohortId <- validateCohortId(cohortId, ids)
-  assertLogical(requireDeath, length = 1)
-
+  cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  cohortId <- validateCohortId(cohortId, settings(cohort))
+  omopgenerics::assertLogical(requireDeath, length = 1)
 
   # create new cohort
   newCohort <- cohort |>
@@ -111,30 +97,30 @@ exitAtDeath <- function(cohort,
     # exit
     dplyr::mutate(
       "cohort_end_date" = dplyr::if_else(
-        .data$cohort_definition_id %in% .env$cohortId & !is.na(.data$date_of_death),
+        .data$cohort_definition_id %in% .env$cohortId &
+          !is.na(.data$date_of_death),
         .data$date_of_death,
         .data$cohort_end_date
       )
-    ) %>%
-    {if (requireDeath) {
-      dplyr::filter(
-        .,
-        !is.na(.data$date_of_death) | !.data$cohort_definition_id %in% .env$cohortId
-      ) |>
-        dplyr::compute(name = name, temporary = FALSE) |>
-        omopgenerics::recordCohortAttrition(
-          reason = "No death recorded",
-          cohortId = cohortId
-        )
-    } else . } |>
+    )
+
+  if (requireDeath) {
+    newCohort <- newCohort |>
+      dplyr::filter(!is.na(.data$date_of_death) |
+                      !.data$cohort_definition_id %in% .env$cohortId) |>
+      dplyr::compute(name = name, temporary = FALSE) |>
+      omopgenerics::recordCohortAttrition(reason = "No death recorded", cohortId = cohortId)
+  } else {
+    newCohort <- newCohort |>
+      dplyr::compute(name = name, temporary = FALSE)
+  }
+
+  newCohort <- newCohort |>
     # no overlapping periods
-    joinOverlap() |>
+    joinOverlap(name = name) |>
     dplyr::compute(name = name, temporary = FALSE) |>
     omopgenerics::newCohortTable(.softValidation = TRUE) |>
-    omopgenerics::recordCohortAttrition(
-      reason = "Exit at death",
-      cohortId = cohortId
-    )
+    omopgenerics::recordCohortAttrition(reason = "Exit at death", cohortId = cohortId)
 
   return(newCohort)
 }

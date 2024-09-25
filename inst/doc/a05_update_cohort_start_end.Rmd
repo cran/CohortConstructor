@@ -1,0 +1,8 @@
+---
+title: "Update cohort start and end dates"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{a04_update_cohort_start_end}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---

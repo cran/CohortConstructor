@@ -3,11 +3,10 @@
 #' @description
 #' `yearCohorts()` splits a cohort into multiple cohorts, one for each year.
 #'
-#' @param cohort A cohort table in a cdm reference.
-#' @param years Numeric vector of years to use to restrict observation to.
-#' @param cohortId IDs of the cohorts to include. If NULL all cohorts will be
-#' considered. Cohorts not included will be removed from the cohort set.
-#' @param name Name of the new cohort table.
+#' @inheritParams cohortDoc
+#' @inheritParams cohortIdSubsetDoc
+#' @inheritParams nameDoc
+#' @param years Numeric vector of years to use to restrict observation to..
 #'
 #' @return A cohort table.
 #'
@@ -26,14 +25,12 @@ yearCohorts <- function(cohort,
                         years,
                         cohortId = NULL,
                         name = tableName(cohort)) {
-  # initial checks
-  cdm <- omopgenerics::cdmReference(cohort)
-  validateCDM(cdm)
-  cohort <- validateCohortTable(cohort)
-  ids <- settings(cohort)$cohort_definition_id
-  cohortId <- validateCohortId(cohortId, ids)
-  assertNumeric(years, integerish = T)
-  name <- validateName(name)
+  # checks
+  name <- omopgenerics::validateNameArgument(name, validation = "warning")
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  cohortId <- validateCohortId(cohortId, settings(cohort))
+  omopgenerics::assertNumeric(years, integerish = TRUE)
 
   if (length(years) == 0) {
     cohort <- cohort |>
@@ -91,14 +88,16 @@ yearCohorts <- function(cohort,
     dplyr::mutate(!!!startDates, !!!endDates) |>
     dplyr::select(!c("cohort_start_date", "cohort_end_date")) |>
     tidyr::pivot_longer(
-      cols = dplyr::starts_with(c("cohort_start_date", "cohort_end_date")),
+      cols = dplyr::starts_with(c(
+        "cohort_start_date", "cohort_end_date"
+      )),
       names_to = c(".value", "year"),
       names_pattern = "(cohort_start_date|cohort_end_date)_(\\d+)"
     ) |>
     dplyr::filter(.data$cohort_start_date <= .data$cohort_end_date) |>
     dplyr::mutate("year" = as.integer(.data$year)) |>
     dplyr::inner_join(cdm[[tmpName]], by = c("cohort_definition_id", "year")) |>
-    dplyr::select(-"cohort_definition_id", - "year") |>
+    dplyr::select(-"cohort_definition_id", -"year") |>
     dplyr::rename("cohort_definition_id" = "new_cohort_definition_id") |>
     dplyr::compute(name = name, temporary = FALSE)
 
@@ -119,9 +118,7 @@ yearCohorts <- function(cohort,
   originalAttrition <- attrition(cohort)
   newAttrition <- list()
   for (k in newSet$cohort_definition_id) {
-    targetId <- newSet$target_cohort_definition_id[
-      newSet$cohort_definition_id == k
-    ]
+    targetId <- newSet$target_cohort_definition_id[newSet$cohort_definition_id == k]
     yr <- newSet$year[newSet$cohort_definition_id == k]
     reason <- "Restrict to observations between: {yr}-01-01 and {yr}-12-31" |>
       glue::glue()
@@ -145,8 +142,8 @@ yearCohorts <- function(cohort,
           dplyr::mutate(
             "excluded_subjects" = .data$excluded_subjects - .data$number_subjects,
             "excluded_records" = .data$excluded_records - .data$number_records,
-            "reason_id" = .data$reason_id + 1,
-            "reason" = .env$reason
+            "reason_id" = .data$reason_id + 1L,
+            "reason" = .env$reason |> as.character()
           )
       )
   }
@@ -166,6 +163,7 @@ yearCohorts <- function(cohort,
 
   # new cohort
   cohort <- cohort |>
+    dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     dplyr::compute(name = name, temporary = FALSE) |>
     omopgenerics::newCohortTable(
       cohortSetRef = newSet,

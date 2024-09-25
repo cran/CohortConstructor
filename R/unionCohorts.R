@@ -5,14 +5,15 @@
 #' that overlap combined and kept. Cohort entries are when an individual was in
 #' _either_ of the cohorts.
 #'
-#' @param cohort A cohort table in a cdm reference.
-#' @param cohortId IDs of the cohorts to include. If NULL all cohorts will be
-#' considered. Cohorts not included will be removed from the cohort set.
-#' @param gap Number of days between two subsequent cohort entries of a subject
-#' that will be merged in a single cohort entry
+#' @inheritParams cohortDoc
+#' @inheritParams cohortIdSubsetDoc
+#' @inheritParams gapDoc
+#' @inheritParams nameDoc
 #' @param cohortName Name of the returned cohort. If NULL, the cohort name will
 #' be created by collapsing the individual cohort names, separated by "_".
-#' @param name Name of the new cohort table.
+#' @param keepOriginalCohorts If TRUE the original cohorts and the newly
+#' created union cohort will be returned. If FALSE only the new cohort will be
+#' returned.
 #'
 #' @export
 #'
@@ -29,95 +30,67 @@
 #'
 #' }
 unionCohorts <- function(cohort,
-                        cohortId = NULL,
-                        gap = 0,
-                        cohortName = NULL,
-                        name = tableName(cohort)) {
+                         cohortId = NULL,
+                         gap = 0,
+                         cohortName = NULL,
+                         keepOriginalCohorts = FALSE,
+                         name = tableName(cohort)) {
   # checks
-  name <- validateName(name)
-  validateCohortTable(cohort)
-  cdm <- omopgenerics::cdmReference(cohort)
-  validateCDM(cdm)
-  ids <- omopgenerics::settings(cohort)$cohort_definition_id
-  cohortId <- validateCohortId(cohortId, ids)
-  assertNumeric(gap, integerish = TRUE, min = 0, length = 1)
-  assertCharacter(cohortName, length = 1, null = TRUE)
+  name <- omopgenerics::validateNameArgument(name, validation = "warning")
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  cohortId <- validateCohortId(cohortId, settings(cohort))
+  omopgenerics::assertNumeric(gap, integerish = TRUE, min = 0, length = 1)
+  omopgenerics::assertCharacter(cohortName, length = 1, null = TRUE)
+  omopgenerics::assertLogical(keepOriginalCohorts, length = 1)
 
   if (length(cohortId) < 2) {
-    cli::cli_warn("At least 2 cohort id must be provided to do the union.")
-    # set
-    set <- cohort |>
-      omopgenerics::settings() |>
-      dplyr::filter(.data$cohort_definition_id == .env$cohortId)
-    if (is.null(cohortName)) {cohortName <- set$cohort_name}
-    # codelist
-    cohCodelist <- attr(cohort, "cohort_codelist")
-    if(!is.null(cohCodelist)) {
-      cohCodelist <- cohCodelist |>
-        dplyr::filter(.data$cohort_definition_id == .env$cohortId) |>
-        dplyr::mutate("cohort_definition_id" = 1)
-    }
-    # update properly
-    cohort <- cohort |>
-      dplyr::filter(.data$cohort_definition_id == .env$cohortId) |>
-      dplyr::mutate(cohort_definition_id = 1) |>
-      dplyr::compute(name = name, temporary = FALSE) |>
-      omopgenerics::newCohortTable(
-        cohortSetRef = set |>
-          dplyr::mutate(cohort_definition_id = 1, cohort_name = cohortName),
-        cohortAttritionRef = cohort |>
-          omopgenerics::attrition() |>
-          dplyr::filter(.data$cohort_definition_id == .env$cohortId) |>
-          dplyr::mutate(cohort_definition_id = 1),
-        cohortCodelistRef = cohCodelist,
-        .softValidation = TRUE
-      )
-    return(cohort)
+    cli::cli_abort("Settings of cohort table must contain at least two cohorts.")
   }
 
-  # union cohort
-  newCohort <- cohort |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
-    joinOverlap(by = "subject_id", gap = gap) |>
-    dplyr::mutate(cohort_definition_id = 1) |>
-    dplyr::compute(name = name, temporary = FALSE)
-
-  # cohort set
-  names <- omopgenerics::settings(cohort)|>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
-    dplyr::pull("cohort_name")
   if (length(cohortName) == 0) {
+    names <- omopgenerics::settings(cohort) |>
+      dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+      dplyr::pull("cohort_name")
     cohortName <- paste0(names, collapse = "_")
   }
   cohSet <- dplyr::tibble(
-    cohort_definition_id = 1, cohort_name = cohortName, gap = gap
+    cohort_definition_id = 1L,
+    cohort_name = cohortName,
+    gap = gap
   )
 
-  # cohort attrition
-  cohAtt <- newCohort |>
-    dplyr::group_by(.data$cohort_definition_id) |>
-    dplyr::summarise(number_records = dplyr::n(),
-                     number_subjects = dplyr::n_distinct(.data$subject_id)) |>
-    dplyr::mutate(
-      "reason_id" = 1,
-      "reason" = "Initial qualifying events",
-      "excluded_records" = 0,
-      "excluded_subjects" = 0
-    )
-
-  # concept list
+  # union cohort
+  # save to a separate table so can append to original cohorts at the end
+  tmpTable  <- omopgenerics::uniqueTableName()
+  unionedCohort <- cohort |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    joinOverlap(name = tmpTable,
+                by = "subject_id",
+                gap = gap) |>
+    dplyr::mutate(cohort_definition_id = 1L) |>
+    dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
+    dplyr::compute(name = tmpTable, temporary = FALSE)
   cohCodelist <- attr(cohort, "cohort_codelist")
-  if(!is.null(cohCodelist)) {
-    cohCodelist <- cohCodelist |> dplyr::mutate("cohort_definition_id" = 1)
+  if (!is.null(cohCodelist)) {
+    cohCodelist <- cohCodelist |> dplyr::mutate("cohort_definition_id" = 1L)
   }
-
-  # new cohort
-  newCohort <- newCohort |>
+  unionedCohort <- unionedCohort |>
     omopgenerics::newCohortTable(
       cohortSetRef = cohSet,
-      cohortAttritionRef = cohAtt,
+      cohortAttritionRef = NULL,
       cohortCodelistRef = cohCodelist,
       .softValidation = TRUE
     )
-  return(newCohort)
+
+  if (isFALSE(keepOriginalCohorts)) {
+    cdm[[name]] <- unionedCohort |>
+      dplyr::compute(name = name, temporary = FALSE)
+  } else {
+    cdm <- bind(cohort, unionedCohort, name = name)
+  }
+
+  CDMConnector::dropTable(cdm, name = tmpTable)
+
+  return(cdm[[name]])
 }
