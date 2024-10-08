@@ -1,6 +1,6 @@
 Package: CohortConstructor
 Title: Build and Manipulate Study Cohorts Using a Common Data Model
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: c(
     person("Edward", "Burn", , "edward.burn@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9286-1128")),
@@ -16,7 +16,7 @@ Authors@R: c(
     role = c("aut"), comment = c(ORCID = "0000-0002-0847-4855")),
     person("Xihang", "Chen", , "xihang.chen@ndorms.ox.ac.uk", 
     role = c("aut"), comment = c(ORCID = "0009-0001-8112-8959")),
-    person("Kim", "Lopez", , "kim.lopez@spc.ox.ac.uk", 
+    person("Kim", "Lopez-Guell", , "kim.lopez@spc.ox.ac.uk", 
     role = "aut", comment = c(ORCID = "0000-0002-8462-8668")),
     person("Elin", "Rowlands", , "elin.rowlands@ndorms.ox.ac.uk", 
     role = "aut", comment = c(ORCID = "0009-0005-5166-0417")))
@@ -40,7 +40,7 @@ Depends: R (>= 4.1)
 URL: https://ohdsi.github.io/CohortConstructor/
 LazyData: true
 NeedsCompilation: no
-Packaged: 2024-09-25 10:34:18 UTC; eburn
+Packaged: 2024-10-08 08:03:36 UTC; eburn
 Author: Edward Burn [aut, cre] (<https://orcid.org/0000-0002-9286-1128>),
   Marti Catala [aut] (<https://orcid.org/0000-0003-3308-9905>),
   Nuria Mercade-Besora [aut] (<https://orcid.org/0009-0006-7948-3747>),
@@ -48,8 +48,8 @@ Author: Edward Burn [aut, cre] (<https://orcid.org/0000-0002-9286-1128>),
   Mike Du [aut] (<https://orcid.org/0000-0002-9517-8834>),
   Yuchen Guo [aut] (<https://orcid.org/0000-0002-0847-4855>),
   Xihang Chen [aut] (<https://orcid.org/0009-0001-8112-8959>),
-  Kim Lopez [aut] (<https://orcid.org/0000-0002-8462-8668>),
+  Kim Lopez-Guell [aut] (<https://orcid.org/0000-0002-8462-8668>),
   Elin Rowlands [aut] (<https://orcid.org/0009-0005-5166-0417>)
 Maintainer: Edward Burn <edward.burn@ndorms.ox.ac.uk>
 Repository: CRAN
-Date/Publication: 2024-09-25 12:10:02 UTC
+Date/Publication: 2024-10-08 08:40:02 UTC

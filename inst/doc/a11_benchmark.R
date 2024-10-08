@@ -1,11 +1,11 @@
 ## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  eval = TRUE, 
-  warning = FALSE, 
-  message = FALSE,
-  comment = "#>",
-  echo = FALSE
+collapse = TRUE,
+eval = TRUE, 
+warning = FALSE, 
+message = FALSE,
+comment = "#>",
+echo = FALSE
 )
 
 ## -----------------------------------------------------------------------------
@@ -23,30 +23,32 @@ library(CohortConstructor)
 
 niceOverlapLabels <- function(labels) {
   new_labels <- gsub("_", " ", gsub(" and.*|cc_", "", labels))
-  tibble("Cohort name" = new_labels) |>
-    mutate(
-      "Cohort name" = str_to_sentence(gsub("_", " ", gsub("cc_|atlas_", "", new_labels))),
-      "Cohort name" = case_when(
-        grepl("Asthma", .data[["Cohort name"]]) ~ "Asthma without COPD",
-        grepl("Covid", .data[["Cohort name"]]) ~ gsub("Covid|Covid", "COVID-19", `Cohort name`),
-        grepl("eutropenia", .data[["Cohort name"]]) ~ "Acquired neutropenia or unspecified leukopenia",
-        grepl("Hosp", .data[["Cohort name"]]) ~ "Inpatient hospitalisation",
-        grepl("First", .data[["Cohort name"]]) ~ "First major depression",
-        grepl("fluoro", .data[["Cohort name"]]) ~ "New fluoroquinolone users",
-        grepl("Beta", .data[["Cohort name"]]) ~ "New users of beta blockers nested in essential hypertension",
-        .default = .data[["Cohort name"]]
-      ),
-      "Cohort name" = if_else(
-        grepl("COVID", .data[["Cohort name"]]),
-        gsub(" female", ": female", gsub(" male", ": male", .data[["Cohort name"]])),
-        .data[["Cohort name"]]
-      ),
-      "Cohort name" = if_else(
-        grepl(" to ", .data[["Cohort name"]]),
-        gsub("male ", "male, ", .data[["Cohort name"]]),
-        .data[["Cohort name"]]
+  return(
+    tibble("Cohort name" = new_labels) |>
+      mutate(
+        "Cohort name" = str_to_sentence(gsub("_", " ", gsub("cc_|atlas_", "", new_labels))),
+        "Cohort name" = case_when(
+          grepl("Asthma", .data[["Cohort name"]]) ~ "Asthma without COPD",
+          grepl("Covid", .data[["Cohort name"]]) ~ gsub("Covid|Covid", "COVID-19", `Cohort name`),
+          grepl("eutropenia", .data[["Cohort name"]]) ~ "Acquired neutropenia or unspecified leukopenia",
+          grepl("Hosp", .data[["Cohort name"]]) ~ "Inpatient hospitalisation",
+          grepl("First", .data[["Cohort name"]]) ~ "First major depression",
+          grepl("fluoro", .data[["Cohort name"]]) ~ "New fluoroquinolone users",
+          grepl("Beta", .data[["Cohort name"]]) ~ "New users of beta blockers nested in essential hypertension",
+          .default = .data[["Cohort name"]]
+        ),
+        "Cohort name" = if_else(
+          grepl("COVID", .data[["Cohort name"]]),
+          gsub(" female", ": female", gsub(" male", ": male", .data[["Cohort name"]])),
+          .data[["Cohort name"]]
+        ),
+        "Cohort name" = if_else(
+          grepl(" to ", .data[["Cohort name"]]),
+          gsub("male ", "male, ", .data[["Cohort name"]]),
+          .data[["Cohort name"]]
+        )
       )
-    )
+  )
 }
 
 ## -----------------------------------------------------------------------------
@@ -66,18 +68,19 @@ benchmarkData$details |>
             locations = cells_body(columns = 1:2))
 
 ## ----fig.width=10, fig.height=7-----------------------------------------------
-# benchmarkData$comparison |>
-#   plotCohortOverlap() +
-#   scale_y_discrete(labels = niceOverlapLabels) +
-#   theme(
-#     legend.text = element_text(size = 10),
-#     strip.text = element_text(size = 14),
-#     axis.text.x = element_text(size = 12),  
-#     axis.title.x = element_text(size = 14),  
-#     axis.title.y = element_text(size = 14)   
-#   ) +
-#   facet_wrap("cdm_name") +
-#   scale_fill_discrete(labels = c("CIRCE", "Both", "CohortConstructor"))
+benchmarkData$comparison |>
+  plotCohortOverlap(uniqueCombinations = FALSE, facet = "cdm_name") +
+  scale_y_discrete(labels = niceOverlapLabels) +
+  theme(
+    legend.text = element_text(size = 10),
+    strip.text = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+  ) +
+  # facet_wrap("cdm_name") +
+  scale_fill_discrete(labels = c("Both", "CIRCE", "CohortConstructor")) +
+  scale_color_discrete(labels = c("Both", "CIRCE", "CohortConstructor"))
 
 ## -----------------------------------------------------------------------------
 ## TABLE with same results as the plot below.
