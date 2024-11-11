@@ -45,9 +45,9 @@ cdm$medications_collapsed <- collapseCohorts(
 )
 
 ## -----------------------------------------------------------------------------
-cdm$medications %>%
+cdm$medications |>
   filter(subject_id == 1)
-cdm$medications_collapsed %>%
+cdm$medications_collapsed |>
   filter(subject_id == 1)
 
 ## -----------------------------------------------------------------------------

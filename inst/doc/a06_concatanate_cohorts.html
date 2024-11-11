@@ -12,7 +12,7 @@
 
 
 
-<title>Concatenate Cohorts</title>
+<title>Concatenating cohort records</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1263,7 +1263,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -1550,7 +1550,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Concatenate Cohorts</h1>
+<h1 class="title toc-ignore">Concatenating cohort records</h1>
 
 
 
@@ -1587,25 +1587,25 @@ years) of each other will be merged.</p>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span></code></pre></div>
 <p>Let’s compare how this function would change the records of a single
 individual.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="sc">%&gt;%</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [4 x 4]</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpmGYlVr\file398c6e7e5237.duckdb]</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmpa806Vz\file2d9824691738.duckdb]</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 1                    1          1 1980-03-15        1980-03-29     </span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 2                    1          1 1976-10-20        1976-11-03     </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 2                    1          1 1971-01-04        1971-01-18     </span></span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 3                    1          1 1982-09-11        1982-10-02     </span></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 4                    1          1 1971-01-04        1971-01-18</span></span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>cdm<span class="sc">$</span>medications_collapsed <span class="sc">%&gt;%</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 4                    1          1 1976-10-20        1976-11-03</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>cdm<span class="sc">$</span>medications_collapsed <span class="sc">|&gt;</span></span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [3 x 4]</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpmGYlVr\file398c6e7e5237.duckdb]</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmpa806Vz\file2d9824691738.duckdb]</span></span>
 <span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; 1                    1          1 1980-03-15        1982-10-02     </span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; 2                    1          1 1976-10-20        1976-11-03     </span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; 3                    1          1 1971-01-04        1971-01-18</span></span></code></pre></div>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; 1                    1          1 1971-01-04        1971-01-18     </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; 2                    1          1 1980-03-15        1982-10-02     </span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; 3                    1          1 1976-10-20        1976-11-03</span></span></code></pre></div>
 <p>Subject 1 initially had 4 records between 1971 and 1982. After
 specifying that records within three years of each other are to be
 merged, the number of records decreases to three. The record from
@@ -1614,15 +1614,15 @@ are merged to create a new record from 1980-03-15 to 1982-10-02.</p>
 <p>Now let’s look at how the cohorts have been changed.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>medications_collapsed)</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition, <span class="at">cohortId =</span> <span class="dv">1</span>)</span></code></pre></div>
-<div class="grViz html-widget html-fill-item" id="htmlwidget-bea9fb9481ee93e4498a" style="width:288px;height:288px;"></div>
-<script type="application/json" data-for="htmlwidget-bea9fb9481ee93e4498a">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"2 present in the reuslt object, please subset to just one of them\", shape = \"box\", penwidth = \"0\", fontname = \"Calibri\", fontsize = \"10\", fontcolor = \"black\", width = \"4\", fillcolor = \"#FFFFFF\", pos = \"1,1!\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-c5870707b639c72c9aee" style="width:288px;height:288px;"></div>
+<script type="application/json" data-for="htmlwidget-c5870707b639c72c9aee">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"2 present in the reuslt object, please subset to just one of them\", shape = \"box\", penwidth = \"0\", fillcolor = \"#FFFFFF\", fontname = \"Calibri\", fontsize = \"10\", fontcolor = \"black\", width = \"4\", pos = \"1,1!\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>The flow chart above illustrates the changes to cohort 1 (users of
 acetaminophen) when entries within 3 years of each other are merged. We
 see that collapsing the cohort has led to 1,390 fewer records.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>medications_collapsed)</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition, <span class="at">cohortId =</span> <span class="dv">2</span>)</span></code></pre></div>
-<div class="grViz html-widget html-fill-item" id="htmlwidget-8bcfb26a16048251e224" style="width:288px;height:288px;"></div>
-<script type="application/json" data-for="htmlwidget-8bcfb26a16048251e224">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"2 present in the reuslt object, please subset to just one of them\", shape = \"box\", penwidth = \"0\", fontname = \"Calibri\", fontsize = \"10\", fontcolor = \"black\", width = \"4\", fillcolor = \"#FFFFFF\", pos = \"1,1!\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-5d95a54d54b71eb47bfc" style="width:288px;height:288px;"></div>
+<script type="application/json" data-for="htmlwidget-5d95a54d54b71eb47bfc">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"2 present in the reuslt object, please subset to just one of them\", shape = \"box\", penwidth = \"0\", fillcolor = \"#FFFFFF\", fontname = \"Calibri\", fontsize = \"10\", fontcolor = \"black\", width = \"4\", pos = \"1,1!\"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>The flow chart above illustrates the changes to cohort 2 (users of
 diclofenac) when entries within 3 years of each other are merged. Since
 this cohort only has one record per individual the function

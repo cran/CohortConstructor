@@ -43,7 +43,7 @@ collapseCohorts <- function(cohort,
   }
   if (gap == Inf) {
     newCohort <- newCohort |>
-      PatientProfiles::addObservationPeriodId() |>
+      PatientProfiles::addObservationPeriodId(name = tmpNewCohort) |>
       joinAll(by = c(
         "cohort_definition_id",
         "subject_id",
@@ -52,7 +52,7 @@ collapseCohorts <- function(cohort,
       dplyr::select(!"observation_period_id")
   } else if (gap > 0) {
     newCohort <- newCohort |>
-      PatientProfiles::addObservationPeriodId() |>
+      PatientProfiles::addObservationPeriodId(name = tmpNewCohort) |>
       joinOverlap(
         name = tmpNewCohort,
         gap = gap,
@@ -79,6 +79,14 @@ collapseCohorts <- function(cohort,
       cohortId = cohortId)
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(newCohort)
 }

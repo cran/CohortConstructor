@@ -136,3 +136,39 @@ NULL
 #' @keywords internal
 NULL
 
+#' Helper for consistent documentation of `keepOriginalCohorts`.
+#'
+#' @param keepOriginalCohorts If TRUE the original cohorts will be return
+#' together with the new ones. If FALSE only the new cohort will be returned.
+#'
+#' @name keepOriginalCohortsDoc
+#' @keywords internal
+NULL
+
+#' Helper for consistent documentation of `collapse`.
+#'
+#' @param collapse Whether to collapse the overlapping records (TRUE) or drop
+#' the records that have an ongoing prior record.
+#'
+#' @name collapseDoc
+#' @keywords internal
+NULL
+
+#' Helper for consistent documentation of `days`.
+#'
+#' @param days Integer with the number of days to add or name of a column (that
+#' must be numeric) to add.
+#'
+#' @name daysDoc
+#' @keywords internal
+NULL
+
+#' Helper for consistent documentation of `padObservation`.
+#'
+#' @param padObservation Whether to pad observations if they are outside
+#' observation_period (TRUE) or drop the records if they are outside
+#' observation_period (FALSE)
+#'
+#' @name padObservationDoc
+#' @keywords internal
+NULL

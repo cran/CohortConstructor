@@ -38,7 +38,39 @@ cdm$medications <- conceptCohort(cdm = cdm,
 cohortCount(cdm$medications)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_sample <- sampleCohorts(cdm$medications,cohortId = 1, n = 100, name = "medications_sample")
+cdm$medications |> sampleCohorts(cohortId = NULL, n = 100)
 
-cohortCount(cdm$medications_sample)
+cohortCount(cdm$medications)
+
+## ----include = FALSE, warning = FALSE-----------------------------------------
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomia_dir())
+cdm <- cdm_from_con(con, cdm_schema = "main", 
+                    write_schema = c(prefix = "my_study_", schema = "main"))
+cdm$medications <- conceptCohort(cdm = cdm, 
+                                 conceptSet = list("diclofenac" = 1124300,
+                                                   "acetaminophen" = 1127433), 
+                                 name = "medications")
+
+## -----------------------------------------------------------------------------
+cdm$medications <- cdm$medications |> sampleCohorts(cohortId = 2, n = 100)
+
+cohortCount(cdm$medications)
+
+## ----include = FALSE, warning = FALSE-----------------------------------------
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomia_dir())
+cdm <- cdm_from_con(con, cdm_schema = "main", 
+                    write_schema = c(prefix = "my_study_", schema = "main"))
+cdm$medications <- conceptCohort(cdm = cdm, 
+                                 conceptSet = list("diclofenac" = 1124300,
+                                                   "acetaminophen" = 1127433), 
+                                 name = "medications")
+
+## -----------------------------------------------------------------------------
+cdm$medications <- cdm$medications |> subsetCohorts(cohortId = 2)
+cohortCount(cdm$medications)
+
+## -----------------------------------------------------------------------------
+cdm$medications <- cdm$medications |> sampleCohorts(cohortId = 2, n = 100)
+
+cohortCount(cdm$medications)
 

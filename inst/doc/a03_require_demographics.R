@@ -4,7 +4,8 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup--------------------------------------------------------------------
+## -----------------------------------------------------------------------------
+library(CodelistGenerator)
 library(CohortConstructor)
 library(CohortCharacteristics)
 library(ggplot2)
@@ -31,91 +32,48 @@ cdm <- cdm_from_con(con, cdm_schema = "main",
                     write_schema = c(prefix = "my_study_", schema = "main"))
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
+fracture_codes <- getCandidateCodes(cdm, "fracture")
+fracture_codes <- list("fracture" = fracture_codes$concept_id)
+cdm$fracture <- conceptCohort(cdm = cdm, 
+                                 conceptSet = fracture_codes, 
+                                 name = "fracture")
 
-settings(cdm$medications)
-cohortCount(cdm$medications)
+summary_attrition <- summariseCohortAttrition(cdm$fracture)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+cdm$fracture <- cdm$fracture |> 
   requireAge(indexDate = "cohort_start_date",
-             ageRange = list(c(18,100)))
+             ageRange = list(c(18, 100)))
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-settings(cdm$medications)
-cohortCount(cdm$medications)
+summary_attrition <- summariseCohortAttrition(cdm$fracture)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+cdm$fracture <- cdm$fracture |> 
   requireSex(sex = "Female")
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-settings(cdm$medications)
-cohortCount(cdm$medications)
+summary_attrition <- summariseCohortAttrition(cdm$fracture)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+cdm$fracture <- cdm$fracture |> 
   requirePriorObservation(indexDate = "cohort_start_date",
                           minPriorObservation = 365)
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-settings(cdm$medications)
-cohortCount(cdm$medications)
+summary_attrition <- summariseCohortAttrition(cdm$fracture)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
-  requireFutureObservation(indexDate = "cohort_start_date",
-                          minFutureObservation = 365)
-
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-settings(cdm$medications)
-cohortCount(cdm$medications)
-
-## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+cdm$fracture <- conceptCohort(cdm = cdm, 
+                                 conceptSet = fracture_codes, 
+                                 name = "fracture") |> 
   requireDemographics(indexDate = "cohort_start_date",
                       ageRange = c(18,100),
                       sex = "Female",
-                      minPriorObservation = 365,
-                      minFutureObservation = 365)
+                      minPriorObservation = 365, 
+                      minFutureObservation = 30)
 
-
-
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
+summary_attrition <- summariseCohortAttrition(cdm$fracture)
+plotCohortAttrition(summary_attrition)
 

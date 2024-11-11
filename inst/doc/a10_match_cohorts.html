@@ -12,7 +12,7 @@
 
 
 
-<title>Generate a matched age and sex cohort</title>
+<title>Generating a matched cohort</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -336,7 +336,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Generate a matched age and sex cohort</h1>
+<h1 class="title toc-ignore">Generating a matched cohort</h1>
 
 
 
@@ -390,10 +390,10 @@ is the cohort_id of the original cohort.</p>
 <p>Check the exclusion criteria applied to generate the new cohorts by
 using <code>cohort_attrition()</code> from CDMConnector package:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Original cohort</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Matched cohort</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">%&gt;%</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">4</span>)</span></code></pre></div>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">4</span>)</span></code></pre></div>
 <p>Briefly, from the original cohort, we exclude first those individuals
 that do not have a match, and then individuals that their matching pair
 is not in observation during the assigned <em>cohort_start_date</em>.
@@ -449,9 +449,9 @@ are the cohorts of interest. If set to NULL, all the cohorts present in
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;matched_cohort3&quot;</span>,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">ratio =</span> <span class="dv">2</span>)</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_set</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(cohort_definition_id)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_set</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(cohort_definition_id)</span></code></pre></div>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>CDMConnector<span class="sc">::</span><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span></code></pre></div>
 <p>Notice that each cohort has their own (and independent of other
 cohorts) matched cohort.</p>
 </div>

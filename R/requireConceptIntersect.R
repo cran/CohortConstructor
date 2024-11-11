@@ -49,7 +49,7 @@ requireConceptIntersect <- function(cohort,
 
   lower_limit <- as.integer(intersections[[1]])
   upper_limit <- intersections[[2]]
-  upper_limit[is.infinite(upper_limit)] <- as.integer(999999)
+  upper_limit[is.infinite(upper_limit)] <- 999999L
   upper_limit <- as.integer(upper_limit)
 
   cols <- unique(
@@ -72,8 +72,9 @@ requireConceptIntersect <- function(cohort,
   if (length(conceptSet) == 0) {
     cli::cli_inform(c("i" = "Empty codelist provided, returning input cohort"))
   } else {
-    subsetCohort <- cohort %>%
-      dplyr::select(dplyr::all_of(.env$cols)) %>%
+    subsetName <- omopgenerics::uniqueTableName()
+    subsetCohort <- cohort |>
+      dplyr::select(dplyr::all_of(.env$cols)) |>
       PatientProfiles::addConceptIntersectCount(
         conceptSet = conceptSet,
         indexDate = indexDate,
@@ -81,10 +82,11 @@ requireConceptIntersect <- function(cohort,
         targetEndDate = targetEndDate,
         window = window,
         censorDate = censorDate,
-        nameStyle = "intersect_concept"
+        nameStyle = "intersect_concept",
+        name = subsetName
       )
 
-    subsetCohort <- subsetCohort %>%
+    subsetCohort <- subsetCohort |>
       dplyr::mutate(lower_limit = .env$lower_limit,
                     upper_limit = .env$upper_limit) |>
       dplyr::filter((
@@ -92,8 +94,9 @@ requireConceptIntersect <- function(cohort,
           .data$intersect_concept <= .data$upper_limit
       ) |
         (!.data$cohort_definition_id %in% .env$cohortId)
-      ) %>%
-      dplyr::select(cols)
+      ) |>
+      dplyr::select(cols) |>
+      dplyr::compute(name = subsetName, temporary = FALSE)
 
     # attrition reason
     if (all(intersections == 0)) {
@@ -118,11 +121,21 @@ requireConceptIntersect <- function(cohort,
       reason <- glue::glue("{reason}, censoring at {censorDate}")
     }
 
-    cohort <- cohort %>%
-      dplyr::inner_join(subsetCohort, by = c(cols)) %>%
-      dplyr::compute(name = name, temporary = FALSE) %>%
-      omopgenerics::newCohortTable(.softValidation = TRUE) %>%
+    cohort <- cohort |>
+      dplyr::inner_join(subsetCohort, by = c(cols)) |>
+      dplyr::compute(name = name, temporary = FALSE) |>
+      omopgenerics::newCohortTable(.softValidation = TRUE) |>
       omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
+
+    omopgenerics::dropTable(cdm = cdm, name = subsetName)
+  }
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
   }
 
   return(cohort)

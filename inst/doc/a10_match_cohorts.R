@@ -23,10 +23,10 @@ knitr::opts_chunk$set(
 
 ## ----eval = FALSE-------------------------------------------------------------
 #  # Original cohort
-#  CDMConnector::cohort_attrition(cdm$matched_cohort1) %>% filter(cohort_definition_id == 1)
+#  CDMConnector::cohort_attrition(cdm$matched_cohort1) |> filter(cohort_definition_id == 1)
 #  
 #  # Matched cohort
-#  CDMConnector::cohort_attrition(cdm$matched_cohort1) %>% filter(cohort_definition_id == 4)
+#  CDMConnector::cohort_attrition(cdm$matched_cohort1) |> filter(cohort_definition_id == 4)
 
 ## ----eval = FALSE-------------------------------------------------------------
 #  CDMConnector::cohort_count(cdm$matched_cohort1)
@@ -47,7 +47,7 @@ knitr::opts_chunk$set(
 #    name = "matched_cohort3",
 #    ratio = 2)
 #  
-#  CDMConnector::cohort_set(cdm$matched_cohort3) %>% arrange(cohort_definition_id)
+#  CDMConnector::cohort_set(cdm$matched_cohort3) |> arrange(cohort_definition_id)
 #  
-#  CDMConnector::cohort_count(cdm$matched_cohort3) %>% arrange(cohort_definition_id)
+#  CDMConnector::cohort_count(cdm$matched_cohort3) |> arrange(cohort_definition_id)
 

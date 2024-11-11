@@ -62,7 +62,7 @@ test_that("matchCohorts runs without errors", {
   # empty set
   cdm <- omopgenerics::emptyCohortTable(cdm, name = "cohort")
   expect_no_error(empty_cohort <- matchCohorts(cohort = cdm$cohort, name = "empty_cohort"))
-  expect_equal(cdm$cohort |> dplyr::collect(), empty_cohort |> dplyr::collect())
+  expect_identical(cdm$cohort |> dplyr::collect(), empty_cohort |> dplyr::collect())
 
   # expect errors
   expect_error(matchCohorts(cohort = dplyr::tibble()))
@@ -77,6 +77,8 @@ test_that("matchCohorts runs without errors", {
 })
 
 test_that("matchCohorts, no duplicated people within a cohort", {
+  skip_on_cran()
+
   cdm <- mockCohortConstructor(nPerson = 1000)
   cdm$cohort1 <- cdm$cohort1 |>
     dplyr::group_by(subject_id) |>
@@ -91,11 +93,11 @@ test_that("matchCohorts, no duplicated people within a cohort", {
                                  matchYearOfBirth = TRUE,
                                  ratio = 1)
 
-  p1 <- cdm$new_cohort %>%
-    dplyr::filter(cohort_definition_id == 1) %>%
-    dplyr::select(subject_id) %>%
+  p1 <- cdm$new_cohort |>
+    dplyr::filter(cohort_definition_id == 1) |>
+    dplyr::select(subject_id) |>
     dplyr::pull()
-  expect_true(length(p1) == length(unique(p1)))
+  expect_true(anyDuplicated(p1) == 0L)
 
 
   cdm$cohort2 <- cdm$cohort2 |>
@@ -109,17 +111,18 @@ test_that("matchCohorts, no duplicated people within a cohort", {
                                  matchSex = TRUE,
                                  matchYearOfBirth = TRUE,
                                  ratio = 5)
-  p1 <- cdm$new_cohort %>%
-    dplyr::filter(cohort_definition_id == 2) %>%
-    dplyr::select(subject_id) %>%
+  p1 <- cdm$new_cohort |>
+    dplyr::filter(cohort_definition_id == 2) |>
+    dplyr::select(subject_id) |>
     dplyr::pull()
 
-  expect_true(length(p1) == length(unique(p1)))
+  expect_true(anyDuplicated(p1) == 0L)
 
   PatientProfiles::mockDisconnect(cdm)
 })
 
 test_that("check that we obtain expected result when ratio is 1", {
+  skip_on_cran()
 
   cdm <- mockCohortConstructor(nPerson = 1000)
 
@@ -136,41 +139,41 @@ test_that("check that we obtain expected result when ratio is 1", {
                                   matchYearOfBirth = TRUE,
                                   ratio = 1)
 
-  expect_true(nrow(omopgenerics::cohortCount(matched_cohorts) %>%
+  expect_true(nrow(omopgenerics::cohortCount(matched_cohorts) |>
                      dplyr::left_join(omopgenerics::settings(matched_cohorts),
-                                      by = "cohort_definition_id") %>%
-                     dplyr::filter(stringr::str_detect(cohort_name, "cohort_1"))  %>%
-                     dplyr::select("number_records") %>%
+                                      by = "cohort_definition_id") |>
+                     dplyr::filter(stringr::str_detect(cohort_name, "cohort_1"))  |>
+                     dplyr::select("number_records") |>
                      dplyr::distinct()) == 1)
 
-  expect_true(nrow(omopgenerics::cohortCount(matched_cohorts) %>%
+  expect_true(nrow(omopgenerics::cohortCount(matched_cohorts) |>
                      dplyr::left_join(omopgenerics::settings(matched_cohorts),
-                                      by = "cohort_definition_id") %>%
-                     dplyr::filter(stringr::str_detect(cohort_name, "cohort_2"))  %>%
-                     dplyr::select("number_records") %>%
+                                      by = "cohort_definition_id") |>
+                     dplyr::filter(stringr::str_detect(cohort_name, "cohort_2"))  |>
+                     dplyr::select("number_records") |>
                      dplyr::distinct()) == 1)
 
   # Everybody has a match
-  n <- matched_cohorts %>%
-    dplyr::summarise(n = max(.data$cohort_definition_id, na.rm = TRUE)/2) %>%
+  n <- matched_cohorts |>
+    dplyr::summarise(n = max(.data$cohort_definition_id, na.rm = TRUE)/2) |>
     dplyr::pull()
 
-  cohorts <- matched_cohorts %>%
-    dplyr::select("person_id" = "subject_id", "cohort_definition_id") %>%
+  cohorts <- matched_cohorts |>
+    dplyr::select("person_id" = "subject_id", "cohort_definition_id") |>
     dplyr::inner_join(
-      cdm$person %>%
+      cdm$person |>
         dplyr::select("person_id", "gender_concept_id", "year_of_birth"),
       by = "person_id"
     )
 
-  expect_true(is.na(nrow(cohorts %>%
-                           dplyr::filter(.data$cohort_definition_id %in% c(1,2,3)) %>%
+  expect_true(is.na(nrow(cohorts |>
+                           dplyr::filter(.data$cohort_definition_id %in% c(1,2,3)) |>
                            dplyr::left_join(
-                             cohorts %>%
-                               dplyr::filter(.data$cohort_definition_id %in% c(4,5,6)) %>%
+                             cohorts |>
+                               dplyr::filter(.data$cohort_definition_id %in% c(4,5,6)) |>
                                dplyr::mutate("cohort_definition_id" = .data$cohort_definition_id-n),
                              by = c("cohort_definition_id", "gender_concept_id", "year_of_birth")
-                           ) %>%
+                           ) |>
                            dplyr::filter(
                              is.na(person_id.y)
                            ))))
@@ -179,6 +182,7 @@ test_that("check that we obtain expected result when ratio is 1", {
 })
 
 test_that("test exactMatchingCohort with a ratio bigger than 1", {
+  skip_on_cran()
 
   cdm <- omock::emptyCdmReference(cdmName = "mock")
   cdm$person <- cdm$person |>
@@ -233,46 +237,112 @@ test_that("test exactMatchingCohort with a ratio bigger than 1", {
                                  ratio = 4)
 
   expect_true(
-    cdm[["new_cohort"]] %>%
+    cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
         cdm$new_cohort, "cohort_1_matched"
-      )) %>%
+      )) |>
       dplyr::pull("number_subjects") |>
       sum() == 2
   )
   expect_true(
-    cdm[["new_cohort"]] %>%
+    cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
         cdm$new_cohort, "matched_to_cohort_1"
-      )) %>%
+      )) |>
       dplyr::pull("number_subjects") |>
       sum() == 8
   )
   expect_true(
-    cdm[["new_cohort"]] %>%
+    cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
         cdm$new_cohort, "cohort_2_matched"
-      )) %>%
+      )) |>
       dplyr::pull("number_subjects") |>
       sum() == 2
   )
   expect_true(
-    cdm[["new_cohort"]] %>%
+    cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
         cdm$new_cohort, "matched_to_cohort_2"
-      )) %>%
+      )) |>
       dplyr::pull("number_subjects") |>
       sum() == 8
   )
 
-  outc <- cdm[["new_cohort"]] %>%
-    dplyr::filter(subject_id == 5) %>% dplyr::reframe(cohort_start_date) %>%
+  outc <- cdm[["new_cohort"]] |>
+    dplyr::filter(subject_id == 5) |> dplyr::reframe(cohort_start_date) |>
     dplyr::pull() %in% as.Date(c("2017-10-30","2003-01-04","2014-12-15","2010-09-09"))
   expect_true(unique(outc) == TRUE)
 
   PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("keepOriginalCohorts works" , {
+  skip_on_cran()
+
+  cdm <- mockCohortConstructor()
+  cohort <- cdm$cohort2 |> matchCohorts(cohortId = 1, keepOriginalCohorts = TRUE, name = "new_cohort")
+  expect_identical(settings(cohort), dplyr::tibble(
+      cohort_definition_id = as.integer(1:3),
+      cohort_name = c("cohort_1", "cohort_1_matched", "matched_to_cohort_1"),
+      target_table_name = c(NA, rep("cohort2", 2)),
+      target_cohort_id = c(NA, 1L, 1L),
+      target_cohort_name = c(NA, "cohort_1_matched", "cohort_1_matched"),
+      match_sex = c(NA, rep(TRUE, 2)),
+      match_year_of_birth = c(NA, rep(TRUE, 2)),
+      match_status = c(NA, "target", "control")
+    ))
+  cohort <- cdm$cohort2 |> matchCohorts(keepOriginalCohorts = TRUE)
+  expect_identical(settings(cohort), dplyr::tibble(
+      cohort_definition_id = as.integer(1:6),
+      cohort_name = c("cohort_1", "cohort_2", "cohort_1_matched", "cohort_2_matched", "matched_to_cohort_1", "matched_to_cohort_2"),
+      target_table_name = c(NA, NA, rep("cohort2", 4)),
+      target_cohort_id = c(NA, NA, 1L, 2L, 1L, 2L),
+      target_cohort_name = c(NA, NA, "cohort_1_matched", "cohort_2_matched", "cohort_1_matched", "cohort_2_matched"),
+      match_sex = c(NA, NA, rep(TRUE, 4)),
+      match_year_of_birth = c(NA, NA, rep(TRUE, 4)),
+      match_status = c(NA, NA, "target", "target", "control", "control")
+    ))
+  PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      other_date = as.Date("2009-01-01")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- matchCohorts(cdm$my_cohort)
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

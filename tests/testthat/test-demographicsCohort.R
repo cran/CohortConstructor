@@ -68,8 +68,8 @@ test_that("Example: sex", {
                   check2 = (cohort_end_date == observation_period_end_date)) |>
     dplyr::compute()
 
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== T))
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== T))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== TRUE))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== TRUE))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -98,8 +98,8 @@ test_that("Example: ageRange", {
                   check2 = (cohort_end_date <= observation_period_end_date)) |>
     dplyr::compute()
 
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== T))
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== T))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== TRUE))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== TRUE))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -127,15 +127,15 @@ test_that("Example: priorObs", {
                   check2 = (cohort_end_date == observation_period_end_date)) |>
     dplyr::compute()
 
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== T))
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== T))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== TRUE))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== TRUE))
 
   loc_cohort3 <- cdm$cohort3 |>
     dplyr::collect() |>
     dplyr::mutate(check3 = observation_period_start_date + 15) |>
     dplyr::mutate(check3 = (check3 == cohort_start_date))
 
-  expect_true(all(loc_cohort3 |> dplyr::pull("check3")== T))
+  expect_true(all(loc_cohort3 |> dplyr::pull("check3")== TRUE))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -193,8 +193,8 @@ test_that("Example: mixture of parameters", {
                   check2 = (cohort_end_date == observation_period_end_date)) |>
     dplyr::compute()
 
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== T))
-  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== T))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check1")== TRUE))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("check2")== TRUE))
 
   cdm$cohort3 <- cdm$cohort3 |>
     PatientProfiles::addAge()
@@ -208,4 +208,33 @@ test_that("Example: mixture of parameters", {
   expect_true(all(cdm$cohort3 |> dplyr::pull("sex")== "Male"))
 
   PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm$my_cohort <- demographicsCohort(cdm, name = "my_cohort", ageRange = list(c(0, 50)))
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

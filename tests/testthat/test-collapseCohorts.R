@@ -11,9 +11,9 @@ test_that("simple example", {
       "concept_id" = 1L,
       "concept_name" = "my concept",
       "domain_id" = "drug",
-      "vocabulary_id" = as.integer(NA),
-      "concept_class_id" = as.integer(NA),
-      "concept_code" = as.integer(NA),
+      "vocabulary_id" = NA_integer_,
+      "concept_class_id" = NA_integer_,
+      "concept_code" = NA_integer_,
       "valid_start_date" = as.Date(NA),
       "valid_end_date" = as.Date(NA)
     )
@@ -118,11 +118,11 @@ test_that("out of observation", {
       "concept_id" = 1L,
       "concept_name" = "my concept",
       "domain_id" = "drug",
-      "vocabulary_id" = as.integer(NA),
-      "concept_class_id" = as.integer(NA),
-      "concept_code" = as.integer(NA),
-      "valid_start_date" = as.integer(NA),
-      "valid_end_date" = as.integer(NA)
+      "vocabulary_id" = NA_integer_,
+      "concept_class_id" = NA_integer_,
+      "concept_code" = NA_integer_,
+      "valid_start_date" = NA_integer_,
+      "valid_end_date" = NA_integer_
     )
   )
   cdm <- omopgenerics::insertTable(
@@ -192,6 +192,7 @@ test_that("out of observation", {
 })
 
 test_that("infitine", {
+  skip_on_cran()
 
   cdm <- omock::mockCdmFromTables()
   cdm$person <- dplyr::tibble(
@@ -249,6 +250,7 @@ test_that("infitine", {
 
 test_that("multiple observation periods", {
 # collapse should respect observation end dates
+  skip_on_cran()
 
   cdm <- omock::mockCdmReference() |>
     omock::mockCdmFromTables(tables = list("cohort" = dplyr::tibble(
@@ -262,9 +264,9 @@ test_that("multiple observation periods", {
       "concept_id" = 1L,
       "concept_name" = "my concept",
       "domain_id" = "drug",
-      "vocabulary_id" = as.integer(NA),
-      "concept_class_id" = as.integer(NA),
-      "concept_code" = as.integer(NA),
+      "vocabulary_id" = NA_integer_,
+      "concept_class_id" = NA_integer_,
+      "concept_code" = NA_integer_,
       "valid_start_date" = as.Date(NA),
       "valid_end_date" = as.Date(NA)
     )
@@ -307,5 +309,42 @@ test_that("multiple observation periods", {
   expect_true(nrow(cdm$cohort_1 |>
                      dplyr::collect()) == 2)
 
+  PatientProfiles::mockDisconnect(cdm)
 
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-01"),
+                                                      cohort_end_date = as.Date("2009-01-02")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- collapseCohorts(cdm$my_cohort)
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

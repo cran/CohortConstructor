@@ -10,11 +10,9 @@
 #' @inheritParams cohortIdSubsetDoc
 #' @inheritParams gapDoc
 #' @inheritParams nameDoc
+#' @inheritParams keepOriginalCohortsDoc
 #' @param returnNonOverlappingCohorts Whether the generated cohorts are mutually
 #' exclusive or not.
-#' @param keepOriginalCohorts If TRUE the original cohorts and the newly
-#' created intersection cohort will be returned. If FALSE only the new cohort
-#' will be returned.
 #'
 #' @export
 #'
@@ -66,9 +64,9 @@ intersectCohorts <- function(cohort,
   # get intersections between cohorts
   tblName <- omopgenerics::uniqueTableName(prefix = uniquePrefix)
   lowerWindow <- ifelse(gap != 0, -gap, gap)
-  cohortOut <- cohort %>%
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) %>%
-    dplyr::select(-"cohort_definition_id") %>%
+  cohortOut <- cohort |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    dplyr::select(-"cohort_definition_id") |>
     splitOverlap(by = "subject_id", name = tblName, tmp = paste0(tblName)) |>
     PatientProfiles::addCohortIntersectFlag(
       targetCohortTable = omopgenerics::tableName(cohort),
@@ -79,13 +77,13 @@ intersectCohorts <- function(cohort,
     )
 
   # create intersect cohort set
-  cohortNames <- omopgenerics::settings(cohort) %>%
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) %>%
+  cohortNames <- omopgenerics::settings(cohort) |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
     dplyr::pull("cohort_name")
   x <- rep(list(c(0, 1)), length(cohortNames))
   names(x) <- cohortNames
-  cohSet <- expand.grid(x) %>%
-    dplyr::as_tibble() %>%
+  cohSet <- expand.grid(x) |>
+    dplyr::as_tibble() |>
     dplyr::filter(dplyr::if_any(dplyr::everything(), ~ . != 0)) |>
     addNames() |>
     dplyr::mutate(cohort_definition_id = as.integer(dplyr::row_number())) |>
@@ -126,15 +124,19 @@ intersectCohorts <- function(cohort,
     name = setName,
     table = cohSet
   )
-  cohortOut <- cohortOut %>%
-    dplyr::inner_join(cdm[[setName]], by = cohortNames) %>%
+  cohortOut <- cohortOut |>
+    dplyr::inner_join(cdm[[setName]], by = cohortNames) |>
     dplyr::select("cohort_definition_id", "subject_id",
-                  "cohort_start_date", "cohort_end_date") %>%
+                  "cohort_start_date", "cohort_end_date") |>
     dplyr::compute(name = tblName, temporary = FALSE)
   if (cohortOut |> dplyr::tally() |> dplyr::pull("n") > 0) {
-    cohortOut <- cohortOut %>%
-      dplyr::compute(name = tblName, temporary = FALSE) |>
-      joinOverlap(name = tblName, gap = gap)
+    cohortOut <- cohortOut |>
+      PatientProfiles::addObservationPeriodId(name = tblName) |>
+      joinOverlap(
+        name = tblName, gap = gap,
+        by = c("observation_period_id", "cohort_definition_id", "subject_id")
+      ) |>
+      dplyr::select(!"observation_period_id")
   }
 
   # attributes
@@ -200,7 +202,7 @@ intersectCohorts <- function(cohort,
     )
     cdm <- bind(originalCohorts, cohortOut, name = name)
   } else {
-    cohortOut <- cohortOut %>%
+    cohortOut <- cohortOut |>
       dplyr::compute(name = name, temporary = FALSE)
     cdm[[name]] <- omopgenerics::newCohortTable(
       table = cohortOut,
@@ -213,6 +215,14 @@ intersectCohorts <- function(cohort,
 
   CDMConnector::dropTable(cdm, name = dplyr::starts_with(uniquePrefix))
   CDMConnector::dropTable(cdm, name = tblName)
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cdm[[name]],
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(cdm[[name]])
 }
@@ -258,49 +268,49 @@ splitOverlap <- function(x,
   ie <- ids[3]
 
   tmpTable_1 <- paste0(tmp, "_1")
-  x_a <- x %>%
-    dplyr::select(dplyr::all_of(by), !!is := dplyr::all_of(start)) %>%
+  x_a <- x |>
+    dplyr::select(dplyr::all_of(by), !!is := dplyr::all_of(start)) |>
     dplyr::union_all(
-      x %>%
-        dplyr::select(dplyr::all_of(by), !!is := dplyr::all_of(end)) %>%
-        dplyr::mutate(!!is := as.Date(!!CDMConnector::dateadd(is, 1)))
-    ) %>%
-    dplyr::distinct() %>%
+      x |>
+        dplyr::select(dplyr::all_of(by), !!is := dplyr::all_of(end)) |>
+        dplyr::mutate(!!is := as.Date(clock::add_days(.data[[is]], 1L)))
+    ) |>
+    dplyr::distinct() |>
     dplyr::compute(temporary = FALSE, name = tmpTable_1)
 
   tmpTable_2 <- paste0(tmp, "_2")
-  x_a <-  x_a %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
-    dbplyr::window_order(.data[[is]]) %>%
-    dplyr::mutate(!!id := dplyr::row_number()) %>%
-    dbplyr::window_order() %>%
-    dplyr::ungroup() %>%
+  x_a <-  x_a |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(by))) |>
+    dbplyr::window_order(.data[[is]]) |>
+    dplyr::mutate(!!id := dplyr::row_number()) |>
+    dbplyr::window_order() |>
+    dplyr::ungroup() |>
     dplyr::compute(temporary = FALSE, name = tmpTable_2)
 
   tmpTable_3 <- paste0(tmp, "_3")
-  x_b <- x %>%
-    dplyr::select(dplyr::all_of(by), !!ie := dplyr::all_of(end)) %>%
+  x_b <- x |>
+    dplyr::select(dplyr::all_of(by), !!ie := dplyr::all_of(end)) |>
     dplyr::union_all(
-      x %>%
-        dplyr::select(dplyr::all_of(by), !!ie := dplyr::all_of(start)) %>%
-        dplyr::mutate(!!ie := as.Date(!!CDMConnector::dateadd(ie, -1)))
-    ) %>%
-    dplyr::distinct() %>%
-    dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
-    dbplyr::window_order(.data[[ie]]) %>%
-    dplyr::mutate(!!id := dplyr::row_number() - 1) %>%
-    dbplyr::window_order() %>%
-    dplyr::ungroup() %>%
+      x |>
+        dplyr::select(dplyr::all_of(by), !!ie := dplyr::all_of(start)) |>
+        dplyr::mutate(!!ie := as.Date(clock::add_days(.data[[ie]], -1L)))
+    ) |>
+    dplyr::distinct() |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(by))) |>
+    dbplyr::window_order(.data[[ie]]) |>
+    dplyr::mutate(!!id := dplyr::row_number() - 1) |>
+    dbplyr::window_order() |>
+    dplyr::ungroup() |>
     dplyr::compute(temporary = FALSE, name = tmpTable_3)
 
-  x <-  x_a %>%
+  x <-  x_a |>
     dplyr::inner_join(
       x_b,
       by = c(by, id)
-    ) %>%
+    ) |>
     dplyr::select(dplyr::all_of(by),
                   !!start := dplyr::all_of(is),
-                  !!end := dplyr::all_of(ie)) %>%
+                  !!end := dplyr::all_of(ie)) |>
     dplyr::compute(temporary = FALSE, name = name)
 }
 
@@ -328,6 +338,7 @@ joinOverlap <- function(cohort,
     return(cohort)
   }
 
+  gap <- as.integer(gap)
   cdm <- omopgenerics::cdmReference(cohort)
 
   start <- cohort |>
@@ -337,14 +348,8 @@ joinOverlap <- function(cohort,
     dplyr::select(by, "date" := !!endDate) |>
     dplyr::mutate("date_id" = 1)
   if (gap > 0) {
-    end <- end %>%
-      dplyr::mutate("date" = as.Date(
-        !!CDMConnector::dateadd(
-          date = "date",
-          number = gap,
-          interval = "day"
-        )
-      ))
+    end <- end |>
+      dplyr::mutate("date" = as.Date(clock::add_days(x = .data$date, n = gap)))
   }
   workingTbl <- omopgenerics::uniqueTableName()
   x <- start |>
@@ -370,14 +375,8 @@ joinOverlap <- function(cohort,
     dplyr::select(-"era_id") |>
     dplyr::compute(temporary = FALSE, name = name)
   if (gap > 0) {
-    x <- x %>%
-      dplyr::mutate(!!endDate := as.Date(
-        !!CDMConnector::dateadd(
-          date = endDate,
-          number = -gap,
-          interval = "day"
-        )
-      ))
+    x <- x |>
+      dplyr::mutate(!!endDate := as.Date(clock::add_days(x = .data[[endDate]], n = -gap)))
   }
 
   x <- x |>
@@ -467,13 +466,13 @@ getIdentifier <- function(x,
 getRandom <- function(n) {
   sample(x = letters,
          size = n,
-         replace = TRUE) %>% paste0(collapse = "")
+         replace = TRUE) |> paste0(collapse = "")
 }
 addNames <- function(cs) {
   cols <- colnames(cs)[colnames(cs) != "cohort_definition_id"]
-  cs <- cs %>% dplyr::mutate("cohort_name" = as.character(NA))
+  cs <- cs |> dplyr::mutate("cohort_name" = NA_character_)
   for (col in cols) {
-    cs <- cs %>%
+    cs <- cs |>
       dplyr::mutate(
         "cohort_name" = dplyr::case_when(
           .data[[col]] == 1 & is.na(.data$cohort_name) ~ .env$col,
@@ -512,7 +511,7 @@ addAttritionReason <- function(att, counts, reason) {
     counts |>
       dplyr::mutate(dplyr::across(
         dplyr::all_of(c("number_records", "number_subjects")),
-        ~ dplyr::if_else(is.na(.x), as.integer(0), as.integer(.x))
+        ~ dplyr::if_else(is.na(.x), 0L, as.integer(.x))
       )) |>
       dplyr::inner_join(att |> getPriorCohortCount(), by = "cohort_definition_id") |>
       dplyr::mutate(

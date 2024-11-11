@@ -9,11 +9,9 @@
 #' @inheritParams cohortIdSubsetDoc
 #' @inheritParams gapDoc
 #' @inheritParams nameDoc
+#' @inheritParams keepOriginalCohortsDoc
 #' @param cohortName Name of the returned cohort. If NULL, the cohort name will
 #' be created by collapsing the individual cohort names, separated by "_".
-#' @param keepOriginalCohorts If TRUE the original cohorts and the newly
-#' created union cohort will be returned. If FALSE only the new cohort will be
-#' returned.
 #'
 #' @export
 #'
@@ -65,9 +63,11 @@ unionCohorts <- function(cohort,
   tmpTable  <- omopgenerics::uniqueTableName()
   unionedCohort <- cohort |>
     dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    PatientProfiles::addObservationPeriodId(name = tmpTable) |>
     joinOverlap(name = tmpTable,
-                by = "subject_id",
+                by = c("observation_period_id", "subject_id"),
                 gap = gap) |>
+    dplyr::select(!"observation_period_id") |>
     dplyr::mutate(cohort_definition_id = 1L) |>
     dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     dplyr::compute(name = tmpTable, temporary = FALSE)
@@ -91,6 +91,14 @@ unionCohorts <- function(cohort,
   }
 
   CDMConnector::dropTable(cdm, name = tmpTable)
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cdm[[name]],
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(cdm[[name]])
 }

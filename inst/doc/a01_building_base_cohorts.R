@@ -27,39 +27,27 @@ cdm <- cdm_from_con(con, cdm_schema = "main",
                     write_schema = c(prefix = "my_study_", schema = "main"))
 
 ## -----------------------------------------------------------------------------
-cdm$working_age_cohort <- demographicsCohort(cdm = cdm, 
-                                             ageRange = c(18, 65), 
-                                             name = "working_age_cohort")
-
-settings(cdm$working_age_cohort)
-cohortCount(cdm$working_age_cohort)
-attrition(cdm$working_age_cohort)
-
-## -----------------------------------------------------------------------------
-cdm$working_age_cohort |> 
-  addAge(indexDate = "cohort_start_date") |> 
-  summarise(min_start_age = min(age), 
-            median_start_age = median(age), 
-            max_start_age = max(age))
-
-cdm$working_age_cohort |> 
-  addAge(indexDate = "cohort_end_date") |> 
-  summarise(min_start_age = min(age), 
-            median_start_age = median(age), 
-            max_start_age = max(age))
-
-## -----------------------------------------------------------------------------
 drug_codes <- getDrugIngredientCodes(cdm, 
-                                     name = c("diclofenac", 
-                                              "acetaminophen"))
+                                     name = c("acetaminophen",
+                                              "amoxicillin", 
+                                              "diclofenac", 
+                                              "simvastatin",
+                                              "warfarin"))
 
 drug_codes
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = drug_codes, 
-                                 name = "medications")
+cdm$drugs <- conceptCohort(cdm, 
+                           conceptSet = drug_codes,
+                           exit = "event_end_date",
+                           name = "drugs")
 
-settings(cdm$medications)
-cohortCount(cdm$medications)
+settings(cdm$drugs)
+cohortCount(cdm$drugs)
+attrition(cdm$drugs)
+
+## -----------------------------------------------------------------------------
+cdm$working_age_cohort <- demographicsCohort(cdm = cdm, 
+                                             ageRange = c(18, 65), 
+                                             name = "working_age_cohort")
 

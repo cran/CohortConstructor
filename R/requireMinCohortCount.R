@@ -22,11 +22,11 @@
 #' cdm <- mockCohortConstructor(nPerson = 100)
 #'
 #' cdm$cohort1 |>
-#' requireMinCohortCount(minCohortCount = 5)
+#' requireMinCohortCount(5)
 #' }
 requireMinCohortCount <- function(cohort,
+                                  minCohortCount,
                                   cohortId = NULL,
-                                  minCohortCount = 5,
                                   name = tableName(cohort)){
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
@@ -52,6 +52,14 @@ requireMinCohortCount <- function(cohort,
       reason = "Fewer than minimum cohort count of {minCohortCount}",
       cohortId = cohortsToDrop
       )
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cdm[[name]],
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   cdm[[name]]
 }

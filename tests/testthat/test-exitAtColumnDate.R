@@ -14,6 +14,11 @@ test_that("exit at first date", {
     con = connection(),
     writeSchema = writeSchema()
   )
+  # remove when omock > 0.3.1
+  cdm$cohort <- cdm$cohort |>
+    dplyr::select("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date", "other_date_1", "other_date_2") |>
+    dplyr::compute(name = "cohort", temporary = FALSE) |>
+    omopgenerics::newCohortTable()
   # works
   cdm$cohort1 <- cdm$cohort |>
     exitAtFirstDate(
@@ -22,16 +27,16 @@ test_that("exit at first date", {
       name = "cohort1"
     )
   expect_true(all(
-    cdm$cohort1 %>% dplyr::pull("cohort_start_date") %>% sort() ==
+    cdm$cohort1 |> dplyr::pull("cohort_start_date") |> sort() ==
       c("1989-12-09", "2000-01-01", "2000-06-03", "2000-12-09", "2015-01-15")
   ))
   expect_true(all(
-    cdm$cohort1 %>% dplyr::pull("cohort_end_date") %>% sort() ==
+    cdm$cohort1 |> dplyr::pull("cohort_end_date") |> sort() ==
       c("1990-12-09", "2001-01-01", "2001-08-01", "2002-12-09", "2015-01-15")
   ))
   # activate test when arrange works for duckdb
   # expect_true(all(
-  #   cdm$cohort1 %>% dplyr::pull("exit_reason") %>% sort() ==
+  #   cdm$cohort1 |> dplyr::pull("exit_reason") |> sort() ==
   #     c('cohort_end_date', 'other_date_1', 'other_date_1',
   #       'other_date_2; cohort_end_date; other_date_1', 'other_date_2; other_date_1')
   # ))
@@ -45,11 +50,11 @@ test_that("exit at first date", {
       returnReason = FALSE
     )
   expect_true(all(
-    cdm$cohort %>% dplyr::pull("cohort_start_date") %>% sort() ==
+    cdm$cohort |> dplyr::pull("cohort_start_date") |> sort() ==
       c("1989-12-09", "2000-01-01", "2000-06-03", "2000-12-09", "2015-01-15")
   ))
   expect_true(all(
-    cdm$cohort %>% dplyr::pull("cohort_end_date") %>% sort() ==
+    cdm$cohort |> dplyr::pull("cohort_end_date") |> sort() ==
       c("1990-12-09", "2001-01-01", "2001-08-01", "2002-12-09", "2015-01-15")
   ))
   expect_true(all(colnames(cdm$cohort) ==
@@ -74,7 +79,11 @@ test_that("exit at last date", {
     con = connection(),
     writeSchema = writeSchema()
   )
-
+  # remove when omock > 0.3.1
+  cdm$cohort <- cdm$cohort |>
+    dplyr::select("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date", "other_date_1", "other_date_2") |>
+    dplyr::compute(name = "cohort", temporary = FALSE) |>
+    omopgenerics::newCohortTable()
   # test cohort id working
   cdm$cohort1 <- cdm$cohort |>
     exitAtLastDate(
@@ -84,11 +93,11 @@ test_that("exit at last date", {
       name = "cohort1"
     )
   expect_true(all(
-    cdm$cohort1 %>% dplyr::pull("cohort_start_date") %>% sort() ==
+    cdm$cohort1 |> dplyr::pull("cohort_start_date") |> sort() ==
       c("1989-12-09", "2000-01-01", "2000-06-03", "2000-12-09", "2015-01-15")
   ))
   expect_true(all(
-    cdm$cohort1 %>% dplyr::pull("cohort_end_date") %>% sort() ==
+    cdm$cohort1 |> dplyr::pull("cohort_end_date") |> sort() ==
       c("1990-12-09", "2001-01-12", "2001-09-02", "2002-12-09", "2015-02-15")
   ))
   expect_true(all(colnames(cdm$cohort1) ==
@@ -102,7 +111,7 @@ test_that("exit at last date", {
       cohortId = c("cohort_1"),
       name = "cohort11"
     )
-  expect_equal(collectCohort(cdm$cohort1, 1), collectCohort(cdm$cohort11, 1))
+  expect_identical(collectCohort(cdm$cohort1, 1), collectCohort(cdm$cohort11, 1))
 
   # test not cohort end as columns working
   cdm$cohort <- cdm$cohort |>
@@ -111,16 +120,16 @@ test_that("exit at last date", {
       returnReason = TRUE
     )
   expect_true(all(
-    cdm$cohort %>% dplyr::pull("cohort_start_date") %>% sort() ==
+    cdm$cohort |> dplyr::pull("cohort_start_date") |> sort() ==
       c("1989-12-09", "2000-01-01", "2000-06-03", "2000-12-09", "2015-01-15")
   ))
   expect_true(all(
-    cdm$cohort %>% dplyr::pull("cohort_end_date") %>% sort() ==
+    cdm$cohort |> dplyr::pull("cohort_end_date") |> sort() ==
       c("2000-11-09", "2001-01-01", "2001-09-02", "2002-12-10", "2015-04-15")
   ))
   expect_true(all(colnames(cdm$cohort) ==
                     c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date", "exit_reason")))
-  expect_true(all(cdm$cohort %>% dplyr::pull("exit_reason") %in% c("other_date_1", "other_date_2")))
+  expect_true(all(cdm$cohort |> dplyr::pull("exit_reason") %in% c("other_date_1", "other_date_2")))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -142,6 +151,11 @@ test_that("expected errors", {
     con = connection(),
     writeSchema = writeSchema()
   )
+  # remove when omock > 0.3.1
+  cdm$cohort <- cdm$cohort |>
+    dplyr::select("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date", "other_date_1", "other_date_2") |>
+    dplyr::compute(name = "cohort", temporary = FALSE) |>
+    omopgenerics::newCohortTable()
   expect_error(cdm$cohort <- cdm$cohort |>
                  exitAtLastDate(
                    dateColumns = c("other_date_1", "other_date_2"),
@@ -195,4 +209,48 @@ test_that("expected errors", {
                    returnReason = TRUE
                  ))
   PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      other_date = as.Date("2009-01-01")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- exitAtLastDate(cdm$my_cohort, dateColumns = c("cohort_end_date", "other_date"), returnReason = TRUE)
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  cdm$my_cohort <- exitAtFirstDate(cdm$my_cohort, dateColumns = c("cohort_start_date", "cohort_end_date"), returnReason = TRUE)
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

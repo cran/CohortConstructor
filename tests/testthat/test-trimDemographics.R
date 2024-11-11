@@ -9,8 +9,8 @@ test_that("simple duckdb checks", {
         "year_of_birth" = as.integer(c(1993, 2000, 2005)),
         "month_of_birth" = as.integer(c(4, 1, 8)),
         "day_of_birth" = as.integer(c(19, 15, 20)),
-        "race_concept_id" = as.integer(0),
-        "ethnicity_concept_id" = as.integer(0)
+        "race_concept_id" = 0L,
+        "ethnicity_concept_id" = 0L
       ),
       "observation_period" = dplyr::tibble(
         "observation_period_id" = as.integer(1:4),
@@ -21,7 +21,7 @@ test_that("simple duckdb checks", {
         "observation_period_end_date" = as.Date(c(
           "2033-10-11", "2017-01-01", "2045-03-12", "2100-12-31"
         )),
-        "period_type_concept_id" = as.integer(0)
+        "period_type_concept_id" = 0L
       )
     ),
     cdmName = "test cohortconstructor",
@@ -213,7 +213,7 @@ test_that("simple duckdb checks", {
       )
   )
   expect_true(cdm$obs3 |> settings() |> nrow() == 6)
-  val = c("0_Inf", "0_19", "20_39", "40_59", "60_79", "80_Inf")
+  val <- c("0_Inf", "0_19", "20_39", "40_59", "60_79", "80_Inf")
   for (k in seq_along(val)) {
     id1 <- settings(cdm$obs1) |>
       dplyr::filter(
@@ -350,22 +350,16 @@ test_that("cohort Id, name, additional columns", {
   expect_true(compareCohort(cdm$cohort2, 2, cdm$cohort3, 2))
   x1 <- collectCohort(cdm$cohort3, 1)
   x3 <- collectCohort(cdm$cohort3, 3)
-  expect_equal(
-    x1,
-    dplyr::tibble(
+  expect_identical(x1, dplyr::tibble(
       subject_id = c(1, 1, 2, 3) |> as.integer(),
       cohort_start_date = as.Date(c("2001-04-03", "2002-05-07", "1999-07-26", "2015-02-19")),
       cohort_end_date = as.Date(c("2002-05-06", "2005-11-07", "2002-09-17", "2015-06-27"))
-    )
-  )
-  expect_equal(
-    x3,
-    dplyr::tibble(
+    ))
+  expect_identical(x3, dplyr::tibble(
       subject_id = c(1, 1, 2) |> as.integer(),
       cohort_start_date = as.Date(c("2001-07-08", "2002-05-07", "2000-05-09")),
       cohort_end_date = as.Date(c("2002-05-06", "2005-11-07", "2002-09-17"))
-    )
-  )
+    ))
   expect_true(all(
     attrition(cdm$cohort3)$reason ==
       c('Initial qualifying events', 'Sex requirement: Male',
@@ -373,15 +367,12 @@ test_that("cohort Id, name, additional columns", {
         'Initial qualifying events', 'Sex requirement: Male',
         'Prior observation requirement: 400 days')
   ))
-  expect_equal(
-    settings(cdm$cohort3),
-    dplyr::tibble(
+  expect_identical(settings(cdm$cohort3), dplyr::tibble(
       cohort_definition_id = as.integer(1:3),
       cohort_name = c("cohort_1_1", "cohort_2", "cohort_1_2"),
       sex = c("Male", "Both", "Male"),
       min_prior_observation = c(0, 0, 400)
-    )
-  )
+    ))
 
   expect_no_error(
     cohort <- trimDemographics(cohort = cdm$cohort2,
@@ -393,4 +384,40 @@ test_that("cohort Id, name, additional columns", {
   )
 
   PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-01"),
+                                                      cohort_end_date = as.Date("2009-01-02")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- trimDemographics(cdm$my_cohort, ageRange = list(c(0, 50)))
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

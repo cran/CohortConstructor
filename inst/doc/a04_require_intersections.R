@@ -5,8 +5,10 @@ knitr::opts_chunk$set(
 )
 
 ## ----setup--------------------------------------------------------------------
+library(CodelistGenerator)
 library(CohortConstructor)
 library(CohortCharacteristics)
+library(visOmopResults)
 library(ggplot2)
 
 ## ----include = FALSE----------------------------------------------------------
@@ -31,127 +33,69 @@ cdm <- cdm_from_con(con, cdm_schema = "main",
                     write_schema = c(prefix = "my_study_", schema = "main"))
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-cohortCount(cdm$medications)
+warfarin_codes <- getDrugIngredientCodes(cdm, "warfarin")
+cdm$warfarin <- conceptCohort(cdm = cdm, 
+                                 conceptSet = warfarin_codes, 
+                                 name = "warfarin")
+cohortCount(cdm$warfarin)
 
 ## -----------------------------------------------------------------------------
 cdm$gi_bleed <- conceptCohort(cdm = cdm,  
-                              conceptSet = list("gi_bleed" = 192671),
+                              conceptSet = list("gi_bleed" = 192671L),
                               name = "gi_bleed")
 
 ## -----------------------------------------------------------------------------
-cdm$medications_gi_bleed <- cdm$medications  %>%
+cdm$warfarin_gi_bleed <- cdm$warfarin  |>
   requireCohortIntersect(intersections = c(1,Inf),
                          targetCohortTable = "gi_bleed", 
                          targetCohortId = 1,
                          indexDate = "cohort_start_date", 
                          window = c(-Inf, 0), 
-                         name = "medications_gi_bleed")
+                         name = "warfarin_gi_bleed")
 
-summary_attrition <- summariseCohortAttrition(cdm$medications_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_gi_bleed)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_no_gi_bleed <- cdm$medications %>%
+cdm$warfarin_no_gi_bleed <- cdm$warfarin |>
   requireCohortIntersect(intersections = 0,
                          targetCohortTable = "gi_bleed", 
                          targetCohortId = 1,
                          indexDate = "cohort_start_date", 
                          window = c(-Inf, 0), 
-                         name = "medications_no_gi_bleed") 
+                         name = "warfarin_no_gi_bleed") 
 
-summary_attrition <- summariseCohortAttrition(cdm$medications_no_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-cdm$gi_bleed <- conceptCohort(cdm = cdm,  
-                              conceptSet = list("gi_bleed" = 192671),
-                              name = "gi_bleed")
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_no_gi_bleed)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_gi_bleed <- cdm$medications  %>%
+cdm$warfarin_gi_bleed <- cdm$warfarin  |>
   requireConceptIntersect(conceptSet = list("gi_bleed" = 192671), 
                          indexDate = "cohort_start_date", 
                          window = c(-Inf, 0), 
-                         name = "medications_gi_bleed")
+                         name = "warfarin_gi_bleed")
 
-summary_attrition <- summariseCohortAttrition(cdm$medications_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_gi_bleed)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_no_gi_bleed <- cdm$medications  %>%
+cdm$warfarin_no_gi_bleed <- cdm$warfarin  |>
   requireConceptIntersect(intersections = 0,
                          conceptSet = list("gi_bleed" = 192671), 
                          indexDate = "cohort_start_date", 
                          window = c(-Inf, 0), 
-                         name = "medications_no_gi_bleed")
+                         name = "warfarin_no_gi_bleed")
 
-summary_attrition <- summariseCohortAttrition(cdm$medications_no_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-cdm$gi_bleed <- conceptCohort(cdm = cdm,  
-                              conceptSet = list("gi_bleed" = 192671),
-                              name = "gi_bleed")
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_no_gi_bleed)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_gi_bleed <- cdm$medications  %>%
-  requireTableIntersect(tableName = "gi_bleed",
+cdm$warfarin_visit <- cdm$warfarin  |>
+  requireTableIntersect(tableName = "visit_occurrence",
                          indexDate = "cohort_start_date", 
-                         window = c(-Inf, 0), 
-                         name = "medications_gi_bleed")
+                         window = c(-Inf, -1), 
+                         name = "warfarin_visit")
 
-summary_attrition <- summariseCohortAttrition(cdm$medications_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## -----------------------------------------------------------------------------
-cdm$medications_no_gi_bleed <- cdm$medications  %>%
-  requireTableIntersect(tableName = "gi_bleed",
-                         indexDate = "cohort_start_date", 
-                         window = c(-Inf, 0), 
-                         name = "medications_no_gi_bleed",
-                        intersections = 0)
-
-summary_attrition <- summariseCohortAttrition(cdm$medications_no_gi_bleed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-cdm$gi_bleed <- conceptCohort(cdm = cdm,  
-                              conceptSet = list("gi_bleed" = 192671),
-                              name = "gi_bleed")
-
-## -----------------------------------------------------------------------------
-cdm$medications_deaths <- cdm$medications  %>%
-  requireDeathFlag(window = c(0,Inf), 
-                         name = "medications_deaths")
-
-summary_attrition <- summariseCohortAttrition(cdm$medications_deaths)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## -----------------------------------------------------------------------------
-cdm$medications_no_deaths <- cdm$medications  %>%
-  requireDeathFlag(window = c(0,Inf), 
-                   name = "medications_no_deaths",
-                   negate = TRUE)
-
-summary_attrition <- summariseCohortAttrition(cdm$medications_no_deaths)
-plotCohortAttrition(summary_attrition, cohortId = 1)
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_visit)
+plotCohortAttrition(summary_attrition)
 

@@ -22,8 +22,8 @@
 #' cdm$cohort2 |> sampleCohorts(cohortId = 1, n = 10)
 #' }
 sampleCohorts <- function(cohort,
-                          cohortId = NULL,
                           n,
+                          cohortId = NULL,
                           name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
@@ -32,7 +32,7 @@ sampleCohorts <- function(cohort,
   cohortId <- validateCohortId(cohortId, settings(cohort))
   n <- validateN(n)
 
-  cohort <- cohort |>
+  cdm[[name]] <- cohort |>
     dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
     dplyr::group_by(.data$cohort_definition_id) |>
     dplyr::select("subject_id", "cohort_definition_id") |>
@@ -44,12 +44,23 @@ sampleCohorts <- function(cohort,
         .data$cohort_definition_id %in% .env$cohortId
       ))) |>
     dplyr::ungroup() |>
-    dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
+    dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort")))  |>
+    dplyr::compute(name = name,
+                   temporary = FALSE)
+
+  cdm[[name]] <- cdm[[name]] |>
     omopgenerics::recordCohortAttrition(
       reason = paste0("Sample ", n, " individuals"),
       cohortId = cohortId
-    ) |>
-    dplyr::compute(name = name, temporary = FALSE)
+    )
 
-  return(cohort)
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cdm[[name]],
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
+
+  return(cdm[[name]])
 }

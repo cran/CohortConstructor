@@ -47,7 +47,7 @@ requireTableIntersect <- function(cohort,
 
   lower_limit <- as.integer(intersections[[1]])
   upper_limit <- intersections[[2]]
-  upper_limit[is.infinite(upper_limit)] <- as.integer(999999)
+  upper_limit[is.infinite(upper_limit)] <- 999999L
   upper_limit <- as.integer(upper_limit)
 
   cols <- unique(
@@ -67,8 +67,9 @@ requireTableIntersect <- function(cohort,
     cli::cli_abort("Currently just one table supported.")
   }
 
-  subsetCohort <- cohort %>%
-    dplyr::select(dplyr::all_of(.env$cols)) %>%
+  subsetName <- omopgenerics::uniqueTableName()
+  subsetCohort <- cohort |>
+    dplyr::select(dplyr::all_of(.env$cols)) |>
     PatientProfiles::addTableIntersectCount(
       tableName = tableName,
       indexDate = indexDate,
@@ -76,10 +77,11 @@ requireTableIntersect <- function(cohort,
       targetEndDate = targetEndDate,
       window = window,
       censorDate = censorDate,
-      nameStyle = "intersect_table"
+      nameStyle = "intersect_table",
+      name = subsetName
     )
 
-  subsetCohort <- subsetCohort %>%
+  subsetCohort <- subsetCohort |>
     dplyr::mutate(lower_limit = .env$lower_limit,
                   upper_limit = .env$upper_limit) |>
     dplyr::filter((
@@ -87,8 +89,9 @@ requireTableIntersect <- function(cohort,
         .data$intersect_table <= .data$upper_limit
     ) |
       (!.data$cohort_definition_id %in% .env$cohortId)
-    ) %>%
-    dplyr::select(cols)
+    ) |>
+    dplyr::select(cols) |>
+    dplyr::compute(name = subsetName, temporary = FALSE)
 
   # attrition reason
   if (all(intersections == 0)) {
@@ -113,11 +116,21 @@ requireTableIntersect <- function(cohort,
     reason <- glue::glue("{reason}, censoring at {censorDate}")
   }
 
-  x <- cohort %>%
-    dplyr::inner_join(subsetCohort, by = c(cols)) %>%
-    dplyr::compute(name = name, temporary = FALSE) %>%
-    omopgenerics::newCohortTable(.softValidation = TRUE) %>%
+  x <- cohort |>
+    dplyr::inner_join(subsetCohort, by = c(cols)) |>
+    dplyr::compute(name = name, temporary = FALSE) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
+
+  omopgenerics::dropTable(cdm = cdm, name = subsetName)
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = x,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(x)
 }

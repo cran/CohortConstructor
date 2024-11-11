@@ -58,29 +58,33 @@ requireDeathFlag <- function(cohort,
   window_start <- window[[1]][1]
   window_end <- window[[1]][2]
 
-  subsetCohort <- cohort %>%
-    dplyr::select(dplyr::all_of(.env$cols)) %>%
+  subsetName <- omopgenerics::uniqueTableName()
+  subsetCohort <- cohort |>
+    dplyr::select(dplyr::all_of(.env$cols)) |>
     PatientProfiles::addDeathFlag(
       indexDate = indexDate,
       censorDate = censorDate,
       window = window,
-      deathFlagName = "death"
+      deathFlagName = "death",
+      name = subsetName
     )
 
   if (isFALSE(negate)) {
-    subsetCohort <- subsetCohort %>%
+    subsetCohort <- subsetCohort |>
       dplyr::filter(.data$death == 1 |
-                      (!.data$cohort_definition_id %in% cohortId)) %>%
-      dplyr::select(!"death")
+                      (!.data$cohort_definition_id %in% cohortId)) |>
+      dplyr::select(!"death") |>
+      dplyr::compute(name = subsetName, temporary = FALSE)
     # attrition reason
     reason <- glue::glue("Death between {window_start} & ",
                          "{window_end} days relative to {indexDate}")
   } else {
     # ie require absence instead of presence
-    subsetCohort <- subsetCohort %>%
+    subsetCohort <- subsetCohort |>
       dplyr::filter(.data$death != 1 |
-                      (!.data$cohort_definition_id %in% cohortId)) %>%
-      dplyr::select(!"death")
+                      (!.data$cohort_definition_id %in% cohortId)) |>
+      dplyr::select(!"death") |>
+      dplyr::compute(name = subsetName, temporary = FALSE)
     # attrition reason
     reason <- glue::glue("Alive between {window_start} & ",
                          "{window_end} days relative to {indexDate}")
@@ -90,11 +94,21 @@ requireDeathFlag <- function(cohort,
     reason <- glue::glue("{reason}, censoring at {censorDate}")
   }
 
-  x <- cohort %>%
-    dplyr::inner_join(subsetCohort, by = c(cols)) %>%
-    dplyr::compute(name = name, temporary = FALSE) %>%
-    omopgenerics::newCohortTable(.softValidation = TRUE) %>%
+  x <- cohort |>
+    dplyr::inner_join(subsetCohort, by = c(cols)) |>
+    dplyr::compute(name = name, temporary = FALSE) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
+
+  omopgenerics::dropTable(cdm = cdm, name = subsetName)
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = x,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(x)
 }

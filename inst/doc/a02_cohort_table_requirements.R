@@ -7,7 +7,8 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup--------------------------------------------------------------------
+## -----------------------------------------------------------------------------
+library(CodelistGenerator)
 library(CohortConstructor)
 library(CohortCharacteristics)
 library(ggplot2)
@@ -26,84 +27,90 @@ cdm <- CDMConnector::cdm_from_con(con, cdm_schema = "main",
                     write_schema = c(prefix = "my_study_", schema = "main"))
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-settings(cdm$medications)
-cohortCount(cdm$medications)
+acetaminophen_codes <- getDrugIngredientCodes(cdm, 
+                                              name = "acetaminophen", 
+                                              nameStyle = "{concept_name}")
+cdm$acetaminophen <- conceptCohort(cdm = cdm, 
+                                   conceptSet = acetaminophen_codes, 
+                                   exit = "event_end_date",
+                                   name = "acetaminophen")
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
+plotCohortAttrition(summary_attrition)
+
+## -----------------------------------------------------------------------------
+cdm$acetaminophen <- cdm$acetaminophen |> 
   requireIsFirstEntry()
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
+summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>%
-  requireIsEntry(c(1,5)) 
-
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
+cdm$acetaminophen <- conceptCohort(cdm = cdm, 
+                                 conceptSet = acetaminophen_codes, 
+                                 name = "acetaminophen")
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
-  requireIsLastEntry()
-
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
+cdm$acetaminophen <- cdm$acetaminophen |> 
   requireInDateRange(dateRange = as.Date(c("2010-01-01", "2015-01-01")))
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
+summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
-  requireMinCohortCount(minCohortCount = 1000)
-
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## ----include = FALSE----------------------------------------------------------
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-## -----------------------------------------------------------------------------
-cdm$medications <- cdm$medications %>% 
-  requireIsFirstEntry() %>%
+cdm$acetaminophen_1 <- conceptCohort(cdm = cdm, 
+                                 conceptSet = acetaminophen_codes, 
+                                 name = "acetaminophen_1") |> 
+  requireIsFirstEntry() |>
   requireInDateRange(dateRange = as.Date(c("2010-01-01", "2016-01-01")))
 
-summary_attrition <- summariseCohortAttrition(cdm$medications)
-plotCohortAttrition(summary_attrition, cohortId = 1)
+cdm$acetaminophen_2 <- conceptCohort(cdm = cdm, 
+                                 conceptSet = acetaminophen_codes, 
+                                 name = "acetaminophen_2") |>
+  requireInDateRange(dateRange = as.Date(c("2010-01-01", "2016-01-01"))) |> 
+  requireIsFirstEntry()
+
+## -----------------------------------------------------------------------------
+summary_attrition_1 <- summariseCohortAttrition(cdm$acetaminophen_1)
+summary_attrition_2 <- summariseCohortAttrition(cdm$acetaminophen_2)
+
+## -----------------------------------------------------------------------------
+plotCohortAttrition(summary_attrition_1)
+
+## -----------------------------------------------------------------------------
+plotCohortAttrition(summary_attrition_2)
+
+## -----------------------------------------------------------------------------
+medication_codes <- getDrugIngredientCodes(cdm = cdm, nameStyle = "{concept_name}")
+medication_codes
+
+## -----------------------------------------------------------------------------
+cdm$medications <- conceptCohort(cdm = cdm, 
+                                 conceptSet = medication_codes,
+                                 name = "medications")
+
+
+cohortCount(cdm$medications) |> 
+  filter(number_subjects > 0) |> 
+  ggplot() +
+  geom_histogram(aes(number_subjects),
+                 colour = "black",
+                 binwidth = 25) +  
+  xlab("Number of subjects") +
+  theme_bw()
+
+## -----------------------------------------------------------------------------
+cdm$medications <- cdm$medications |> 
+  requireMinCohortCount(minCohortCount = 500)
+
+cohortCount(cdm$medications) |> 
+  filter(number_subjects > 0) |> 
+  ggplot() +
+  geom_histogram(aes(number_subjects),
+                 colour = "black",
+                 binwidth = 25) + 
+  xlim(0, NA) + 
+  xlab("Number of subjects") +
+  theme_bw()
 

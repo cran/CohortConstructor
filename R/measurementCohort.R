@@ -100,6 +100,7 @@ measurementCohort <- function(cdm,
   }
 
   # create concept set tibble
+  tmpCodelist <- omopgenerics::uniqueTableName()
   cohortCodelist <- lapply(conceptSet, dplyr::as_tibble) |>
     dplyr::bind_rows(.id = "cohort_name") |>
     dplyr::inner_join(cohortSet, by = "cohort_name") |>
@@ -107,7 +108,7 @@ measurementCohort <- function(cdm,
                   "concept_id"  = "value",
                   "codelist_name" = "cohort_name") |>
     dplyr::mutate("type" = "index event") |>
-    addDomains(cdm)
+    addDomains(cdm, tmpCodelist)
 
   ud <- cohortCodelist |>
     dplyr::filter(!tolower(.data$domain_id) %in% "measurement" |
@@ -123,8 +124,9 @@ measurementCohort <- function(cdm,
 
   cohortCodelist <- cohortCodelist |>
     dplyr::filter(tolower(.data$domain_id) %in% "measurement") |>
-    dplyr::compute()
+    dplyr::compute(name = tmpCodelist, temporary = FALSE)
 
+  cli::cli_inform(c("i" = "Subsetting measurement table."))
   cohort <- cdm$measurement |>
     dplyr::select(
       "subject_id" = "person_id",
@@ -135,43 +137,11 @@ measurementCohort <- function(cdm,
       "value_as_concept_id",
       "unit_concept_id"
     ) |>
-    dplyr::inner_join(cohortCodelist |>
-                        dplyr::select("concept_id", "cohort_definition_id"),
-                      by = "concept_id") |>
-    dplyr::filter(!is.na(.data$cohort_start_date)) |>
-    dplyr::compute(name = name, temporary = FALSE)
-
-  if (cohort |> dplyr::tally() |> dplyr::pull("n") == 0) {
-    cli::cli_inform(c("i" = "No table could be subsetted, returning empty cohort."))
-    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
-    cdm[[name]] <- cdm[[name]] |>
-      dplyr::select("cohort_definition_id",
-                    "subject_id",
-                    "cohort_start_date",
-                    "cohort_end_date") |>
-      omopgenerics::newCohortTable(
-        cohortSetRef = cohortSet,
-        cohortAttritionRef = NULL,
-        cohortCodelistRef = cohortCodelist |> dplyr::collect()
-      )
-    return(cdm[[name]])
-  }
-
-  cli::cli_inform(c("i" = "Getting records in observation."))
-  cohort <- cohort |>
-    PatientProfiles::addDemographics(
-      age = FALSE,
-      sex = FALSE,
-      priorObservationType = "date",
-      futureObservationType = "date"
+    dplyr::inner_join(
+      cohortCodelist |> dplyr::select("concept_id", "cohort_definition_id"),
+      by = "concept_id"
     ) |>
-    dplyr::filter(
-      .data$prior_observation <= .data$cohort_start_date,
-      .data$future_observation >= .data$cohort_end_date
-    ) |>
-    dplyr::select(-"prior_observation", -"future_observation") |>
     dplyr::compute(name = name, temporary = FALSE)
-
 
   if (!is.null(valueAsConcept) || !is.null(valueAsNumber)) {
     cli::cli_inform(c("i" = "Applying measurement requirements."))
@@ -185,8 +155,52 @@ measurementCohort <- function(cdm,
         "There are no subjects with the specified value_as_concept_id or value_as_number."
       )
     }
-
   }
+
+  cohort <- cohort |>
+    omopgenerics::newCohortTable(
+      cohortSetRef = cohortSet,
+      cohortCodelistRef = cohortCodelist |> dplyr::collect(),
+      .softValidation = TRUE
+    )
+
+  if (cohort |> dplyr::tally() |> dplyr::pull("n") == 0) {
+    cli::cli_inform(c("i" = "No table could be subsetted, returning empty cohort."))
+    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
+    cdm[[name]] <- cdm[[name]] |>
+      dplyr::select("cohort_definition_id",
+                    "subject_id",
+                    "cohort_start_date",
+                    "cohort_end_date") |>
+      omopgenerics::newCohortTable(
+        cohortSetRef = cohortSet,
+        cohortAttritionRef = attrition(cohort),
+        cohortCodelistRef = cohortCodelist |> dplyr::collect()
+      )
+    return(cdm[[name]])
+  }
+
+  cli::cli_inform(c("i" = "Getting records in observation."))
+  cohort <- cohort |>
+    dplyr::filter(!is.na(.data$cohort_start_date)) |>
+    dplyr::compute(name = name, temporary = FALSE) |>
+    omopgenerics::recordCohortAttrition(reason = "Not missing record date") |>
+    dplyr::left_join(
+      cdm$observation_period |>
+        dplyr::select(
+          "person_id",
+          "observation_period_start_date",
+          "observation_period_end_date"
+        ),
+      by = c("subject_id" = "person_id")
+    ) |>
+    dplyr::filter(
+      .data$observation_period_start_date <= .data$cohort_start_date,
+      .data$observation_period_end_date >= .data$cohort_end_date
+    ) |>
+    dplyr::select(-"observation_period_start_date", -"observation_period_end_date") |>
+    dplyr::compute(name = name, temporary = FALSE) |>
+    omopgenerics::recordCohortAttrition(reason = "Record in observation")
 
   cohort <- cohort |>
     dplyr::select("cohort_definition_id",
@@ -194,19 +208,25 @@ measurementCohort <- function(cdm,
                   "cohort_start_date",
                   "cohort_end_date") |>
     dplyr::distinct() |>
-    dplyr::compute(name = name, temporary = FALSE)
+    dplyr::compute(name = name, temporary = FALSE) |>
+    omopgenerics::recordCohortAttrition(reason = "Distinct measurement records")
 
   cli::cli_inform(c("i" = "Creating cohort attributes."))
 
   cohort <- cohort |>
-    omopgenerics::newCohortTable(
-      cohortSetRef = cohortSet,
-      cohortAttritionRef = NULL,
-      cohortCodelistRef = cohortCodelist |> dplyr::collect(),
-      .softValidation = TRUE
-    )
+    omopgenerics::newCohortTable(.softValidation = TRUE)
 
   cli::cli_inform(c("v" = "Cohort {.strong {name}} created."))
+
+  omopgenerics::dropTable(cdm = cdm, name = tmpCodelist)
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(cohort)
 }
@@ -232,19 +252,18 @@ getFilterExpression <- function(valueAsConcept, valueAsNumber) {
   return(paste0(expFilter, collapse = " | ") |>  rlang::parse_exprs())
 }
 
-addDomains <- function(cohortCodelist, cdm) {
+addDomains <- function(cohortCodelist, cdm, name) {
   # insert table as temporary
   tmpName <- omopgenerics::uniqueTableName()
   cdm <- omopgenerics::insertTable(cdm = cdm,
                                    name = tmpName,
                                    table = cohortCodelist)
-  cdm[[tmpName]] <- cdm[[tmpName]] |> dplyr::compute()
 
   cohortCodelist <- cdm[["concept"]] |>
     dplyr::select("concept_id", "domain_id") |>
     dplyr::right_join(cdm[[tmpName]], by = "concept_id") |>
     dplyr::mutate("domain_id" = tolower(.data$domain_id)) |>
-    dplyr::compute()
+    dplyr::compute(name = name, temporary = FALSE)
 
   omopgenerics::dropTable(cdm = cdm, name = tmpName)
 

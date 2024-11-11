@@ -14,8 +14,7 @@ test_that("subsetCohort works", {
     cdm$cohort1 |> dplyr::filter(.data$cohort_definition_id == 1) |> dplyr::pull("cohort_start_date") |> sort() ==
       cdm$cohort2 |> dplyr::pull("cohort_start_date") |> sort()
   ))
-  expect_equal(attrition(cdm$cohort1) |> dplyr::filter(.data$cohort_definition_id == 1),
-               attrition(cdm$cohort2))
+  expect_identical(attrition(cdm$cohort1) |> dplyr::filter(.data$cohort_definition_id == 1), attrition(cdm$cohort2))
 
   # subset more than 1 cohort
   cdm$cohort3 <- subsetCohorts(cdm$cohort1, c(3,4,5), name = "cohort3")
@@ -26,8 +25,7 @@ test_that("subsetCohort works", {
     cdm$cohort1 |> dplyr::filter(.data$cohort_definition_id %in% 3:5) |> dplyr::pull("cohort_start_date") |> sort() ==
       cdm$cohort3 |> dplyr::pull("cohort_start_date") |> sort()
   ))
-  expect_equal(attrition(cdm$cohort1) |> dplyr::filter(.data$cohort_definition_id %in% 3:5),
-               attrition(cdm$cohort3))
+  expect_identical(attrition(cdm$cohort1) |> dplyr::filter(.data$cohort_definition_id %in% 3:5), attrition(cdm$cohort3))
 
   # same name
   cohort <- cdm$cohort1
@@ -39,8 +37,7 @@ test_that("subsetCohort works", {
     cohort |> dplyr::filter(.data$cohort_definition_id %in% 3:5) |> dplyr::pull("cohort_start_date") |> sort() ==
       cdm$cohort1 |> dplyr::pull("cohort_start_date") |> sort()
   ))
-  expect_equal(attrition(cohort) |> dplyr::filter(.data$cohort_definition_id %in% 3:5),
-               attrition(cdm$cohort1))
+  expect_identical(attrition(cohort) |> dplyr::filter(.data$cohort_definition_id %in% 3:5), attrition(cdm$cohort1))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -82,14 +79,12 @@ test_that("codelist works", {
 
   # Subset 1 cohort
   cdm$cohort2 <- subsetCohorts(cdm$cohort1, 1, name = "cohort2")
-  expect_equal(attr(cdm$cohort2, "cohort_codelist") |> dplyr::collect(),
-               attr(cdm$cohort1, "cohort_codelist") |> dplyr::filter(cohort_definition_id == 1) |> dplyr::collect())
+  expect_identical(attr(cdm$cohort2, "cohort_codelist") |> dplyr::collect(), attr(cdm$cohort1, "cohort_codelist") |> dplyr::filter(cohort_definition_id == 1) |> dplyr::collect())
 
   # same name
   cohort <- cdm$cohort1
   cdm$cohort1 <- subsetCohorts(cdm$cohort1, 2)
-  expect_equal(attr(cdm$cohort1, "cohort_codelist") |> dplyr::collect(),
-               attr(cohort, "cohort_codelist") |> dplyr::filter(cohort_definition_id == 2) |> dplyr::collect())
+  expect_identical(attr(cdm$cohort1, "cohort_codelist") |> dplyr::collect(), attr(cohort, "cohort_codelist") |> dplyr::filter(cohort_definition_id == 2) |> dplyr::collect())
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -113,3 +108,38 @@ test_that("Expected behaviour", {
   PatientProfiles::mockDisconnect(cdm)
 })
 
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      sex = "Female"))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- subsetCohorts(cdm$my_cohort, cohortId = 1)
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
+})

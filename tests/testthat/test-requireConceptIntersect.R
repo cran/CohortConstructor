@@ -32,11 +32,8 @@ test_that("require flag in concept", {
                                               conceptSet = list(a = 1),
                                               window = c(-Inf, Inf),
                                               name = "cohort3")
-  expect_equal(colnames(cdm$cohort3), colnames(cdm$cohort1))
-
-
-  expect_true(all(cdm$cohort3 |> dplyr::pull("subject_id") ==
-                    rep(1, 5)))
+  expect_identical(colnames(cdm$cohort3), colnames(cdm$cohort1))
+  expect_true(all(cdm$cohort3 |> dplyr::pull("subject_id") == 1L))
   expect_true(all(cdm$cohort3 |> dplyr::pull("cohort_start_date") |> sort() ==
                     c("2001-03-24", "2001-11-28", "2002-01-30", "2002-06-13", "2003-05-17", "2004-03-11")))
 
@@ -149,18 +146,18 @@ test_that("requiring absence in another cohort", {
                                                        window = c(-Inf, Inf),
                                                       intersections = 0,
                                                        name = "cohort3_exclusion")
-  in_both <- intersect(cdm$cohort3_inclusion %>%
-                         dplyr::pull("subject_id") %>%
+  in_both <- intersect(cdm$cohort3_inclusion |>
+                         dplyr::pull("subject_id") |>
                          unique(),
-                       cdm$cohort3_exclusion %>%
-                         dplyr::pull("subject_id") %>%
+                       cdm$cohort3_exclusion |>
+                         dplyr::pull("subject_id") |>
                          unique())
   expect_true(length(in_both) == 0)
-  in_both <- intersect(cdm$cohort3_inclusion %>%
-                         dplyr::pull("cohort_start_date") %>%
+  in_both <- intersect(cdm$cohort3_inclusion |>
+                         dplyr::pull("cohort_start_date") |>
                          sort(),
-                       cdm$cohort3_exclusion %>%
-                         dplyr::pull("cohort_start_date") %>%
+                       cdm$cohort3_exclusion |>
+                         dplyr::pull("cohort_start_date") |>
                          sort())
   expect_true(length(in_both) == 0)
   expect_true(all(omopgenerics::attrition(cdm$cohort3_exclusion)$reason ==
@@ -224,61 +221,60 @@ test_that("different intersection count requirements", {
   cdm <- cdm_local |> copyCdm()
 
   # no intersections - people not in cohort2
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(0, 0),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(4,5,6,7,8,9,10))
+                      dplyr::pull("subject_id")), as.integer(c(4,5,6,7,8,9,10)))
 
 
   # only one intersection
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(1, 1),
                                              conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")),
-               c(1))
+                      dplyr::pull("subject_id")), c(1L))
 
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(1),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(1))
+                      dplyr::pull("subject_id")), c(1L))
 
   # 2 intersections
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(2, 2),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(2))
+                      dplyr::pull("subject_id")), c(2L))
 
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(2),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(2))
+                      dplyr::pull("subject_id")), c(2L))
 
 
   # 2 or more intersections
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(2, Inf),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(2, 3))
+                      dplyr::pull("subject_id")), c(2L, 3L))
 
   # 2 or 3 intersections
-  expect_equal(sort(cdm$cohort1 |>
+  expect_identical(sort(cdm$cohort1 |>
                       requireConceptIntersect(intersections = c(2, 3),
                                               conceptSet = list("a" = 1),
                                              window = c(-Inf, Inf),
                                              name = "cohort1_test") |>
-                      dplyr::pull("subject_id")), c(2, 3))
+                      dplyr::pull("subject_id")), c(2L, 3L))
 
 
 
@@ -302,4 +298,41 @@ test_that("different intersection count requirements", {
 
   PatientProfiles::mockDisconnect(cdm)
 
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      other_date = as.Date("2009-01-01")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- requireConceptIntersect(cdm$my_cohort, conceptSet = list(a = 0), window = list(c(0, Inf)))
+
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

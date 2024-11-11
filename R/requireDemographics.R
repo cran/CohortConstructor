@@ -284,15 +284,15 @@ demographicsFilter <- function(cohort,
         "cohort_end_date",
         indexDate
       )
-    )) %>%
+    )) |>
     PatientProfiles::addDemographics(
       indexDate = indexDate,
       age  = reqAge,
       sex = reqSex,
       priorObservation = reqPriorObservation,
-      futureObservation = reqFutureObservation
-    ) |>
-    dplyr::compute(name = workingName, temporary = FALSE)
+      futureObservation = reqFutureObservation,
+      name = workingName
+    )
 
   # all output cohorts in one table to filter all at the same time:
   workingTable <- workingTable |>
@@ -492,6 +492,14 @@ demographicsFilter <- function(cohort,
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(workingName))
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tempSetName))
 
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
+
   return(newCohort)
 }
 
@@ -610,10 +618,11 @@ reqDemographicsCohortSet <- function(set,
         .data$cohort_name
       ))
   }
-
   combinations <- combinations |>
-    dplyr::mutate(min_age = as.integer(sub("_.*", "", .data$age_range)), max_age = as.integer(sub(".*_", "", .data$age_range))) |>
-    dplyr::mutate(age_range = stringr::str_replace(.data$age_range, "_999", "_Inf")) |>
+    dplyr::mutate(min_age = as.integer(sub("_.*", "", .data$age_range)),
+                  max_age = sub(".*_", "", .data$age_range)) |>
+    dplyr::mutate(max_age = stringr::str_replace(.data$max_age, "Inf", "999")) |>
+    dplyr::mutate(max_age = as.integer(.data$max_age)) |>
     dplyr::select(!c("group_id"))
 
   # new cohort set

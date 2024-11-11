@@ -125,6 +125,13 @@ exitAtColumnDate <- function(cohort,
     reason <- "entry_reason"
   }
 
+  if (reason %in% colnames(cohort) & returnReason) {
+    cli::cli_inform("Column {reason} will be overwritten.")
+    cohort <- cohort |> dplyr::select(!dplyr::all_of(reason))
+  } else if (reason %in% colnames(cohort) & !returnReason) {
+    reason <- "date_column_name_1234"
+  }
+
   # check NA
   checkNA <- cohort |>
     dplyr::filter(dplyr::if_all(
@@ -137,7 +144,8 @@ exitAtColumnDate <- function(cohort,
     cli::cli_abort("All cohort records must have at least one non-empty date in the `dateColumns`")
   }
 
-  tmpName <- omopgenerics::uniqueTableName()
+  tmpPrefix <- omopgenerics::tmpPrefix()
+  tmpName <- omopgenerics::uniqueTableName(prefix = tmpPrefix)
 
   if (all(ids %in% cohortId)) {
     newCohort <- cohort |>
@@ -186,9 +194,9 @@ exitAtColumnDate <- function(cohort,
     dplyr::compute(name = tmpName, temporary = FALSE)
 
   # checks with informative errors
-  validateNewCohort(newCohort, cdm, tmpName)
+  validateNewCohort(newCohort, cdm, tmpPrefix)
 
-  if (any(!ids %in% cohortId)) {
+  if (!all(ids %in% cohortId)) {
     dateColumns <- dateColumns[!dateColumns %in% c("cohort_end_date", "cohort_start_date")]
     newCohort <- newCohort |>
       # join non modified cohorts
@@ -210,7 +218,15 @@ exitAtColumnDate <- function(cohort,
     dplyr::compute(name = name, temporary = FALSE) |>
     omopgenerics::newCohortTable(.softValidation = TRUE)
 
-  cdm <- omopgenerics::dropTable(cdm, name = dplyr::starts_with(tmpName))
+  cdm <- omopgenerics::dropTable(cdm, name = dplyr::starts_with(tmpPrefix))
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
 
   return(newCohort)
 }
@@ -230,8 +246,11 @@ validateNewCohort <- function(newCohort, cdm, tmpName) {
   }
   ## Out of observation
   checkObservation <- newCohort |>
-    PatientProfiles::addFutureObservation(futureObservationName = "observation_end_0123456789",
-                                          futureObservationType = "date") |>
+    PatientProfiles::addFutureObservation(
+      futureObservationName = "observation_end_0123456789",
+      futureObservationType = "date",
+      name = omopgenerics::uniqueTableName(prefix = tmpName)
+    ) |>
     dplyr::filter(.data$cohort_end_date > .data$observation_end_0123456789) |>
     dplyr::tally() |>
     dplyr::pull("n")

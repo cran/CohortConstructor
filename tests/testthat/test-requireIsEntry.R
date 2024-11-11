@@ -37,12 +37,10 @@ test_that("requireIsFirstEntry, cohortIds & name arguments", {
   counts <- omopgenerics::cohortCount(cdm$cohort)
   counts_new <- omopgenerics::cohortCount(cdm$new_cohort)
 
-  expect_equal(counts |> dplyr::filter(cohort_definition_id %in% 2:3),
-               counts_new |> dplyr::filter(cohort_definition_id %in% 2:3))
-  expect_false(counts |> dplyr::filter(cohort_definition_id == 1) %>% dplyr::pull(number_records) ==
-                 counts_new |> dplyr::filter(cohort_definition_id == 1) %>% dplyr::pull(number_records))
-  expect_equal(counts_new |> dplyr::filter(cohort_definition_id == 1),
-               dplyr::tibble(cohort_definition_id = 1, number_records = 3, number_subjects = 3))
+  expect_identical(counts |> dplyr::filter(cohort_definition_id %in% 2:3), counts_new |> dplyr::filter(cohort_definition_id %in% 2:3))
+  expect_false(counts |> dplyr::filter(cohort_definition_id == 1) |> dplyr::pull(number_records) ==
+                 counts_new |> dplyr::filter(cohort_definition_id == 1) |> dplyr::pull(number_records))
+  expect_identical(counts_new |> dplyr::filter(cohort_definition_id == 1), dplyr::tibble(cohort_definition_id = 1L, number_records = 3L, number_subjects = 3L))
   expect_true(all(cdm$new_cohort |>  dplyr::pull(cohort_start_date) ==
                     c("2001-05-29", "1999-07-30", "2015-01-23", "2002-10-09", "2003-09-12",
                       "1999-04-16", "2000-03-09", "2000-05-05", "2015-02-22", "2002-09-28",
@@ -89,12 +87,10 @@ test_that("requireIsLastEntry", {
   counts <- omopgenerics::cohortCount(cdm$cohort)
   counts_new <- omopgenerics::cohortCount(cdm$new_cohort)
 
-  expect_equal(counts |> dplyr::filter(cohort_definition_id %in% 2:3),
-               counts_new |> dplyr::filter(cohort_definition_id %in% 2:3))
-  expect_false(counts |> dplyr::filter(cohort_definition_id == 1) %>% dplyr::pull(number_records) ==
-                 counts_new |> dplyr::filter(cohort_definition_id == 1) %>% dplyr::pull(number_records))
-  expect_equal(counts_new |> dplyr::filter(cohort_definition_id == 1),
-               dplyr::tibble(cohort_definition_id = 1, number_records = 3, number_subjects = 3))
+  expect_identical(counts |> dplyr::filter(cohort_definition_id %in% 2:3), counts_new |> dplyr::filter(cohort_definition_id %in% 2:3))
+  expect_false(counts |> dplyr::filter(cohort_definition_id == 1) |> dplyr::pull(number_records) ==
+                 counts_new |> dplyr::filter(cohort_definition_id == 1) |> dplyr::pull(number_records))
+  expect_identical(counts_new |> dplyr::filter(cohort_definition_id == 1), dplyr::tibble(cohort_definition_id = 1L, number_records = 3L, number_subjects = 3L))
   expect_true(all(cdm$new_cohort |>  dplyr::pull(cohort_start_date) ==
                     c("2004-01-08", "1999-07-30", "2015-02-17", "2002-10-09", "2003-09-12",
                       "1999-04-16", "2000-03-09", "2000-05-05", "2015-02-22", "2002-09-28",
@@ -189,7 +185,7 @@ test_that("requireEntry", {
                                       person_id = c(1,2),
                                       observation_period_start_date  = as.Date("2010-01-01"),
                                       observation_period_end_date  = as.Date("2011-01-01"),
-                                      period_type_concept_id = as.integer(NA))
+                                      period_type_concept_id = NA_integer_)
                            )
  cdm <- omopgenerics::insertTable(cdm, "my_cohort",
                                   data.frame(cohort_definition_id = 1L,
@@ -216,7 +212,58 @@ test_that("requireEntry", {
    dplyr::pull("cohort_start_date")),
    as.Date(c("2010-06-01","2010-07-01")),
    ignore_attr = TRUE)
+})
 
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
 
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
 
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      other_date = as.Date("2009-01-01")))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- requireIsEntry(cdm$my_cohort, entryRange = c(0,2))
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  cdm$my_cohort <- requireIsEntry(cdm$my_cohort, entryRange = c(1,Inf))
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  cdm$my_cohort <- requireIsFirstEntry(cdm$my_cohort)
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  cdm$my_cohort <- requireIsLastEntry(cdm$my_cohort)
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })

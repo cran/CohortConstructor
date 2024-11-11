@@ -11,11 +11,10 @@ test_that("yearCohorts - change name", {
                              years = 1997:2002,
                              cohortId = NULL,
                              name = "cohort1")
-  expect_equal(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id),
-               dplyr::tibble(
-                 cohort_definition_id = 1:6,
+  expect_identical(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id), dplyr::tibble(
+                 cohort_definition_id = as.integer(1:6),
                  cohort_name = paste0("cohort_1_", 1997:2002),
-                 target_cohort_definition_id = 1,
+                 target_cohort_definition_id = 1L,
                  year = 1997:2002,
                  target_cohort_name = "cohort_1"
                ))
@@ -45,16 +44,15 @@ test_that("yearCohorts - change name", {
                             years = 2005:2008,
                             cohortId = NULL,
                             name = "cohort1")
-  expect_equal(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id),
-               dplyr::tibble(
-                 cohort_definition_id = 1:12,
+  expect_identical(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id), dplyr::tibble(
+                 cohort_definition_id = as.integer(1:12),
                  cohort_name = c(
                    "cohort_1_2005", "cohort_2_2005", "cohort_3_2005", "cohort_1_2006",
                    "cohort_2_2006", "cohort_3_2006", "cohort_1_2007", "cohort_2_2007",
                    "cohort_3_2007", "cohort_1_2008", "cohort_2_2008", "cohort_3_2008"
                  ),
-                 target_cohort_definition_id = c(1:3, 1:3, 1:3, 1:3),
-                 year = c(rep(2005, 3), rep(2006, 3), rep(2007, 3), rep(2008, 3)),
+                 target_cohort_definition_id = as.integer(c(1:3, 1:3, 1:3, 1:3)),
+                 year = as.integer(c(rep(2005, 3), rep(2006, 3), rep(2007, 3), rep(2008, 3))),
                  target_cohort_name = rep(paste0("cohort_", 1:3), 4)
                ))
   expect_true(all(cdm$cohort1 |> dplyr::pull("cohort_start_date") |> sort() ==
@@ -84,13 +82,12 @@ test_that("yearCohorts - change name", {
                              years = 2005:2008,
                              cohortId = 1,
                              name = "cohort1")
-  expect_equal(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id),
-               dplyr::tibble(
-                 cohort_definition_id = 1:4,
+  expect_identical(settings(cdm$cohort1) |> dplyr::arrange(.data$cohort_definition_id), dplyr::tibble(
+                 cohort_definition_id = as.integer(1:4),
                  cohort_name = c(
                    paste0("cohort_1_", 2005:2008)
                  ),
-                 target_cohort_definition_id = c(1, 1, 1, 1),
+                 target_cohort_definition_id = as.integer(c(1, 1, 1, 1)),
                  year = c(2005:2008),
                  target_cohort_name = c(rep("cohort_1", 4))
                ))
@@ -113,7 +110,7 @@ test_that("yearCohorts - change name", {
                              years = numeric(),
                              cohortId = 1,
                              name = "cohort1")
-  expect_equal(cdm$cohort1 |> dplyr::collect(), cdm$cohort |> dplyr::collect())
+  expect_identical(cdm$cohort1 |> dplyr::collect(), cdm$cohort |> dplyr::collect())
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -130,11 +127,10 @@ test_that("yearCohorts - keep name", {
   cdm$cohort <- yearCohorts(cohort = cdm$cohort,
                              years = 1997:2002,
                              cohortId = settings(cdm$cohort)$cohort_name)
-  expect_equal(settings(cdm$cohort) |> dplyr::arrange(.data$cohort_definition_id),
-               dplyr::tibble(
-                 cohort_definition_id = 1:6,
+  expect_identical(settings(cdm$cohort) |> dplyr::arrange(.data$cohort_definition_id), dplyr::tibble(
+                 cohort_definition_id = as.integer(1:6),
                  cohort_name = paste0("cohort_1_", 1997:2002),
-                 target_cohort_definition_id = 1,
+                 target_cohort_definition_id = 1L,
                  year = 1997:2002,
                  target_cohort_name = "cohort_1"
                ))
@@ -164,13 +160,12 @@ test_that("yearCohorts - keep name", {
   cdm$cohort <- yearCohorts(cohort = cdm$cohort,
                              years = 2005:2008,
                              cohortId = 1)
-  expect_equal(settings(cdm$cohort) |> dplyr::arrange(.data$cohort_definition_id),
-               dplyr::tibble(
-                 cohort_definition_id = 1:4,
+  expect_identical(settings(cdm$cohort) |> dplyr::arrange(.data$cohort_definition_id), dplyr::tibble(
+                 cohort_definition_id = as.integer(1:4),
                  cohort_name = c(
                    paste0("cohort_1_", 2005:2008)
                  ),
-                 target_cohort_definition_id = c(1, 1, 1, 1),
+                 target_cohort_definition_id = as.integer(c(1, 1, 1, 1)),
                  year = c(2005:2008),
                  target_cohort_name = c(rep("cohort_1", 4))
                ))
@@ -189,4 +184,40 @@ test_that("yearCohorts - keep name", {
   expect_true(all(cohortCount(cdm$cohort)$number_records == c(1, 0, 0, 0)))
 
   PatientProfiles::mockDisconnect(cdm)
+})
+
+test_that("test indexes - postgres", {
+  skip_on_cran()
+  skip_if(Sys.getenv("CDM5_POSTGRESQL_DBNAME") == "")
+  skip_if(!testIndexes)
+
+  db <- DBI::dbConnect(RPostgres::Postgres(),
+                       dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                       host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                       user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                       password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+  cdm <- CDMConnector::cdm_from_con(
+    con = db,
+    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+                     prefix = "cc_"),
+    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+  )
+
+  cdm <- omopgenerics::insertTable(cdm = cdm,
+                                   name = "my_cohort",
+                                   table = data.frame(cohort_definition_id = 1L,
+                                                      subject_id = 1L,
+                                                      cohort_start_date = as.Date("2009-01-02"),
+                                                      cohort_end_date = as.Date("2009-01-03"),
+                                                      sex = "Female"))
+  cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
+  cdm$my_cohort <- yearCohorts(cdm$my_cohort, years = 2008:2010)
+  expect_true(
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+  )
+
+  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdm_disconnect(cdm = cdm)
 })
