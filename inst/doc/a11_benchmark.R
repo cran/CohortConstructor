@@ -20,6 +20,7 @@ library(tidyr)
 library(gt)
 library(scales)
 library(CohortConstructor)
+library(gt)
 
 niceOverlapLabels <- function(labels) {
   new_labels <- gsub("_", " ", gsub(" and.*|cc_", "", labels))
@@ -138,7 +139,7 @@ benchmarkData$time_definition |>
 ## -----------------------------------------------------------------------------
 header_prefix <- "[header]Time by tool (minutes)\n[header_level]"
 benchmarkData$time_domain |>
-  gtTable(colsToMergeRows = "all_columns") |>
+  formatTable() |> 
   tab_style(style = list(cell_fill(color = "#e1e1e1"), cell_text(weight = "bold")), 
             locations = cells_column_labels()) |>
   tab_style(style = list(cell_text(weight = "bold")), 
@@ -146,7 +147,7 @@ benchmarkData$time_domain |>
 
 ## -----------------------------------------------------------------------------
 benchmarkData$time_strata |>
-  gtTable(colsToMergeRows = "all_columns") |>
+  formatTable() |>
   tab_style(style = list(cell_fill(color = "#e1e1e1"), cell_text(weight = "bold")), 
             locations = cells_column_labels()) |>
   tab_style(style = list(cell_text(weight = "bold")), 

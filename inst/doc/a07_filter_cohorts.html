@@ -365,26 +365,26 @@ and another for users of acetaminophen.</p>
 individuals in each cohort.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span> <span class="fu">sampleCohorts</span>(<span class="at">cohortId =</span> <span class="cn">NULL</span>, <span class="at">n =</span> <span class="dv">100</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;main.my_study_medications&gt; [?? x 4]</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmpa806Vz\file2d98524a2d18.duckdb]</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmp8iVoDT\file5c2859907d63.duckdb]</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;  1                    1       2839 2012-11-06        2012-11-13     </span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  2                    2       3761 1990-11-29        1990-11-29     </span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;  3                    2       4570 1972-08-02        1972-08-02     </span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  4                    2       4643 1944-06-22        1944-06-22     </span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;  5                    1        789 1989-05-07        1989-05-21     </span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;  6                    1       2541 2003-11-06        2003-12-06     </span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;  7                    1       2909 1990-07-15        1990-07-29     </span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;  8                    1       3569 1977-01-14        1977-01-28     </span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;  9                    2       2044 1997-01-18        1997-01-18     </span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; 10                    2       4525 2007-08-04        2007-08-04     </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;  1                    1       3968 1954-01-03        1954-02-02     </span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  2                    1       3968 2019-01-27        2019-02-02     </span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;  3                    1       2647 1988-01-31        1988-02-07     </span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  4                    1       5334 1970-10-25        1970-11-08     </span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;  5                    2       1600 1978-01-12        1978-01-12     </span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;  6                    1       3641 1979-04-01        1979-04-15     </span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;  7                    1       1024 1992-02-10        1992-02-24     </span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;  8                    1       3022 1991-07-18        1991-07-25     </span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;  9                    1        199 2010-02-04        2010-02-18     </span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; 10                    1       2580 2012-06-14        2012-06-28     </span></span>
 <span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span>
 <span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a></span>
 <span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medications)</span>
 <span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>
 <span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id number_records number_subjects</span></span>
 <span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;          &lt;int&gt;           &lt;int&gt;</span></span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; 1                    1            374             100</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; 1                    1            391             100</span></span>
 <span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; 2                    2            100             100</span></span></code></pre></div>
 <p>When cohortId = NULL all cohorts in the table are used. Note that
 this function does not reduced the number of records in each cohort,
