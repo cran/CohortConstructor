@@ -11,7 +11,7 @@
 #' @inheritParams windowDoc
 #' @inheritParams nameDoc
 #'
-#' @return Cohort table with only those isatisfying the criteria kept
+#' @return Cohort table with only those entries satisfying the criteria
 #'
 #' @export
 #'
@@ -42,8 +42,15 @@ requireCohortIntersect <- function(cohort,
   validateCohortColumn(indexDate, cohort, class = "Date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   window <- omopgenerics::validateWindowArgument(window)
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   intersections <- validateIntersections(intersections)
+
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    return(cdm[[name]])
+  }
 
   lower_limit <- as.integer(intersections[[1]])
   upper_limit <- intersections[[2]]
@@ -93,7 +100,7 @@ requireCohortIntersect <- function(cohort,
       window = window,
       censorDate = censorDate,
       nameStyle = "intersect_cohort",
-      name = name
+      name = subsetName
     )
 
   subsetCohort <- subsetCohort |>
@@ -105,7 +112,7 @@ requireCohortIntersect <- function(cohort,
     ) |
       (!.data$cohort_definition_id %in% .env$cohortId)
     ) |>
-    dplyr::select(cols) |>
+    dplyr::select(dplyr::all_of(cols)) |>
     dplyr::compute(name = subsetName, temporary = FALSE)
 
   # attrition reason
@@ -131,6 +138,7 @@ requireCohortIntersect <- function(cohort,
     reason <- glue::glue("{reason}, censoring at {censorDate}")
   }
 
+  # add additional columns
   x <- cohort |>
     dplyr::inner_join(subsetCohort, by = c(cols)) |>
     dplyr::compute(name = name, temporary = FALSE) |>

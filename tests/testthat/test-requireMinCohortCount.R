@@ -35,7 +35,7 @@ test_that("testing requireMinCohortCount", {
     name = "cohort1_b"
   )
   expect_gt(nrow(cdm$cohort1_b |>
-                     dplyr::collect()), 0)
+                   dplyr::collect()), 0)
   expect_true(all(cohortCount(cdm$cohort1_b) |>
                     dplyr::filter(cohort_definition_id == 1) |>
                     dplyr::pull("number_records") == 0))
@@ -62,10 +62,11 @@ test_that("testing requireMinCohortCount", {
 
 
   # nobody to drop
-  cdm$cohort1_c <- requireMinCohortCount(cdm$cohort1,
-                                         minCohortCount = 0,
-                                         name = "cohort1_c"
-  )
+  expect_warning(
+    cdm$cohort1_c <- requireMinCohortCount(cdm$cohort1,
+                                           minCohortCount = 0,
+                                           name = "cohort1_c"
+    ))
   expect_identical(settings(cdm$cohort1_c), startSettings)
   expect_identical(
     attrition(cdm$cohort1_c) |>
@@ -99,15 +100,6 @@ test_that("testing requireMinCohortCount", {
                                                     name = "cohort2"
   ))
   expect_error(cdm$cohort2 <- requireMinCohortCount(cdm$cohort1,
-                                                    cohortId = "1",
-                                                    name = "cohort2"
-  ))
-  expect_error(cdm$cohort2 <- requireMinCohortCount(cdm$cohort1,
-                                                    cohortId = 2,
-                                                    name = "cohort3"
-  ))
-  expect_error(cdm$cohort2 <- requireMinCohortCount(cdm$cohort1,
-                                                    cohortId = 10,
                                                     name = "cohort2"
   ))
 
@@ -124,12 +116,12 @@ test_that("test indexes - postgres", {
                        host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
                        user = Sys.getenv("CDM5_POSTGRESQL_USER"),
                        password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
-  cdm <- CDMConnector::cdm_from_con(
+  cdm <- CDMConnector::cdmFromCon(
     con = db,
-    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
-    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-                     prefix = "cc_"),
-    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+    cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+    writePrefix = "cc_",
+    achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
   cdm <- omopgenerics::insertTable(cdm = cdm,
@@ -147,5 +139,5 @@ test_that("test indexes - postgres", {
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
-  CDMConnector::cdm_disconnect(cdm = cdm)
+  CDMConnector::cdmDisconnect(cdm = cdm)
 })

@@ -3,6 +3,15 @@
 #' @description
 #' `matchCohorts()` generate a new cohort matched to individuals in an
 #' existing cohort. Individuals can be matched based on year of birth and sex.
+#' Matching is done at the record level, so if individuals have multiple
+#' cohort entries they can be matched to different individuals for each of their
+#' records.
+#'
+#' Two new cohorts will be created when matching. The first is those
+#' cohort entries which were matched ("_sampled" is added to the original
+#' cohort name for this cohort). The other is the matches found from the
+#' database population ("_matched" is added to the original cohort name
+#' for this cohort).
 #'
 #' @inheritParams cohortDoc
 #' @inheritParams cohortIdSubsetDoc
@@ -43,23 +52,15 @@ matchCohorts <- function(cohort,
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   omopgenerics::assertNumeric(ratio, min = 0, length = 1)
   omopgenerics::assertLogical(matchSex, length = 1)
   omopgenerics::assertLogical(matchYearOfBirth, length = 1)
 
-  # Check if there are repeated people within the cohort
-  y <- cohort |>
-    dplyr::filter(.data$cohort_definition_id %in% cohortId) |>
-    dplyr::group_by(.data$cohort_definition_id, .data$subject_id) |>
-    dplyr::filter(dplyr::n() >= 2) |>
-    dplyr::ungroup() |>
-    dplyr::tally() |>
-    dplyr::pull()
-  if (y != 0) {
-    cli::cli_warn(
-      "Multiple records per person detected. The matchCohorts() function is designed to operate under the assumption that there is only one record per person within each cohort. If this assumption is not met, each record will be treated independently. As a result, the same individual may be matched multiple times, leading to inconsistent and potentially misleading results."
-    )
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning empty cohort as `cohortId` is not valid.")
+    cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
+    return(cdm[[name]])
   }
 
   # table prefix
@@ -135,7 +136,7 @@ matchCohorts <- function(cohort,
         dplyr::left_join(
           settings(cdm[[target]]) |>
             dplyr::mutate(
-              "cohort_name" = paste0(.data$cohort_name, "_matched")) |>
+              "cohort_name" = paste0(.data$cohort_name, "_sampled")) |>
             dplyr::select("cohort_definition_id", "target_cohort_name" = "cohort_name"),
           by = "cohort_definition_id"
         ) |>
@@ -158,7 +159,7 @@ matchCohorts <- function(cohort,
       cohortSetRef = settings(cdm[[target]]) |>
         dplyr::select("cohort_definition_id", "cohort_name") |>
         dplyr::mutate(
-          "cohort_name" = paste0(.data$cohort_name, "_matched")) |>
+          "cohort_name" = paste0(.data$cohort_name, "_sampled")) |>
         dplyr::mutate(
           "target_table_name" = omopgenerics::tableName(cohort),
           "target_cohort_id" = .data$cohort_definition_id,
@@ -168,7 +169,7 @@ matchCohorts <- function(cohort,
           "match_status" = "target"
         )
       ,
-      .softValidation = TRUE
+      .softValidation = FALSE
     )
 
   # Bind both cohorts
@@ -228,7 +229,7 @@ getNewCohort <- function(cohort, cohortId, control) {
     dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     omopgenerics::newCohortTable(
       cohortSetRef = settings(cohort) |>
-        dplyr::mutate("cohort_name" = paste0("matched_to_", .data$cohort_name)),
+        dplyr::mutate("cohort_name" = paste0(.data$cohort_name, "_matched")),
       cohortAttritionRef = dplyr::tibble(
         "cohort_definition_id" = as.integer(cohortId),
         "number_records" = controls |> dplyr::tally() |> dplyr::pull() |> as.integer(),

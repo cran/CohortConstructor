@@ -350,9 +350,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>                      <span class="at">dbdir =</span> <span class="fu">eunomia_dir</span>())</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdm_from_con</span>(con, <span class="at">cdm_schema =</span> <span class="st">&quot;main&quot;</span>, </span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>                    <span class="at">write_schema =</span> <span class="fu">c</span>(<span class="at">prefix =</span> <span class="st">&quot;my_study_&quot;</span>, <span class="at">schema =</span> <span class="st">&quot;main&quot;</span>))</span></code></pre></div>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>                      <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writeSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>                  <span class="at">writePrefix =</span> <span class="st">&quot;my_study_&quot;</span>)</span></code></pre></div>
 </div>
 <div id="concept-based-cohort-creation" class="section level2">
 <h2>Concept based cohort creation</h2>
@@ -406,23 +406,23 @@ these will be their drug exposure end date).</p>
 <span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;  1                    1            137             137         1 Initial qualif…</span></span>
 <span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;  2                    1            137             137         2 Record start &lt;…</span></span>
 <span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  3                    1            137             137         3 Record in obse…</span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  4                    1            137             137         4 Collapse overl…</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  4                    1            137             137         4 Merge overlapp…</span></span>
 <span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;  5                    2          14205            2679         1 Initial qualif…</span></span>
 <span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;  6                    2          14205            2679         2 Record start &lt;…</span></span>
 <span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;  7                    2          14205            2679         3 Record in obse…</span></span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;  8                    2          13908            2679         4 Collapse overl…</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;  8                    2          13908            2679         4 Merge overlapp…</span></span>
 <span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt;  9                    3            850             850         1 Initial qualif…</span></span>
 <span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; 10                    3            850             850         2 Record start &lt;…</span></span>
 <span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; 11                    3            830             830         3 Record in obse…</span></span>
-<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; 12                    3            830             830         4 Collapse overl…</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; 12                    3            830             830         4 Merge overlapp…</span></span>
 <span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; 13                    4            182             182         1 Initial qualif…</span></span>
 <span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; 14                    4            182             182         2 Record start &lt;…</span></span>
 <span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt; 15                    4            182             182         3 Record in obse…</span></span>
-<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; 16                    4            182             182         4 Collapse overl…</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; 16                    4            182             182         4 Merge overlapp…</span></span>
 <span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt; 17                    5           4309            2130         1 Initial qualif…</span></span>
 <span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt; 18                    5           4309            2130         2 Record start &lt;…</span></span>
 <span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt; 19                    5           4309            2130         3 Record in obse…</span></span>
-<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; 20                    5           4307            2130         4 Collapse overl…</span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; 20                    5           4307            2130         4 Merge overlapp…</span></span>
 <span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt; # ℹ 2 more variables: excluded_records &lt;int&gt;, excluded_subjects &lt;int&gt;</span></span></code></pre></div>
 </div>
 <div id="demographic-based-cohort-creation" class="section level2">

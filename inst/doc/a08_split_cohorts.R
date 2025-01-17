@@ -19,9 +19,9 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 }
 
 ## -----------------------------------------------------------------------------
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomia_dir())
-cdm <- cdm_from_con(con, cdm_schema = "main", 
-                    write_schema = c(prefix = "my_study_", schema = "main"))
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
+cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main", 
+                    writeSchema = "main", writePrefix = "my_study_")
 
 ## -----------------------------------------------------------------------------
 cdm$medications <- conceptCohort(cdm = cdm, 
@@ -39,9 +39,9 @@ cdm$stratified <- cdm$medications |>
 settings(cdm$stratified)
 
 ## ----include=FALSE, warning=FALSE---------------------------------------------
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomia_dir())
-cdm <- cdm_from_con(con, cdm_schema = "main", 
-                    write_schema = c(prefix = "my_study_", schema = "main"))
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchema = "main", 
+                    writeSchema = c(prefix = "my_study_", schema = "main"))
 
 cdm$medications <- conceptCohort(cdm = cdm, 
                                  conceptSet = list("diclofenac" = 1124300,

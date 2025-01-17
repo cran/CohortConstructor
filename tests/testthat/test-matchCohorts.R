@@ -62,7 +62,7 @@ test_that("matchCohorts runs without errors", {
 
   # empty set
   cdm <- omopgenerics::emptyCohortTable(cdm, name = "cohort")
-  expect_no_error(empty_cohort <- matchCohorts(cohort = cdm$cohort, name = "empty_cohort"))
+  expect_warning(empty_cohort <- matchCohorts(cohort = cdm$cohort, name = "empty_cohort"))
   expect_identical(cdm$cohort |> dplyr::collect(), empty_cohort |> dplyr::collect())
 
   # expect errors
@@ -71,8 +71,6 @@ test_that("matchCohorts runs without errors", {
 
   # expect warnings
   cdm <- mockCohortConstructor(nPerson = 1000)
-  expect_warning(matchCohorts(cohort = cdm$cohort1,
-                              name = "new_cohort"))
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -241,7 +239,7 @@ test_that("test exactMatchingCohort with a ratio bigger than 1", {
     cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
-        cdm$new_cohort, "cohort_1_matched"
+        cdm$new_cohort, "cohort_1_sampled"
       )) |>
       dplyr::pull("number_subjects") |>
       sum() == 2
@@ -250,7 +248,7 @@ test_that("test exactMatchingCohort with a ratio bigger than 1", {
     cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
-        cdm$new_cohort, "matched_to_cohort_1"
+        cdm$new_cohort, "cohort_1_matched"
       )) |>
       dplyr::pull("number_subjects") |>
       sum() == 8
@@ -259,7 +257,7 @@ test_that("test exactMatchingCohort with a ratio bigger than 1", {
     cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
-        cdm$new_cohort, "cohort_2_matched"
+        cdm$new_cohort, "cohort_2_sampled"
       )) |>
       dplyr::pull("number_subjects") |>
       sum() == 2
@@ -268,7 +266,7 @@ test_that("test exactMatchingCohort with a ratio bigger than 1", {
     cdm[["new_cohort"]] |>
       cohortCount() |>
       dplyr::filter(.data$cohort_definition_id %in% omopgenerics::getCohortId(
-        cdm$new_cohort, "matched_to_cohort_2"
+        cdm$new_cohort, "cohort_2_matched"
       )) |>
       dplyr::pull("number_subjects") |>
       sum() == 8
@@ -289,10 +287,10 @@ test_that("keepOriginalCohorts works" , {
   cohort <- cdm$cohort2 |> matchCohorts(cohortId = 1, keepOriginalCohorts = TRUE, name = "new_cohort")
   expect_identical(settings(cohort), dplyr::tibble(
       cohort_definition_id = as.integer(1:3),
-      cohort_name = c("cohort_1", "cohort_1_matched", "matched_to_cohort_1"),
+      cohort_name = c("cohort_1", "cohort_1_sampled", "cohort_1_matched"),
       target_table_name = c(NA, rep("cohort2", 2)),
       target_cohort_id = c(NA, 1L, 1L),
-      target_cohort_name = c(NA, "cohort_1_matched", "cohort_1_matched"),
+      target_cohort_name = c(NA, "cohort_1_sampled", "cohort_1_sampled"),
       match_sex = c(NA, rep(TRUE, 2)),
       match_year_of_birth = c(NA, rep(TRUE, 2)),
       match_status = c(NA, "target", "control")
@@ -300,10 +298,10 @@ test_that("keepOriginalCohorts works" , {
   cohort <- cdm$cohort2 |> matchCohorts(keepOriginalCohorts = TRUE)
   expect_identical(settings(cohort), dplyr::tibble(
       cohort_definition_id = as.integer(1:6),
-      cohort_name = c("cohort_1", "cohort_2", "cohort_1_matched", "cohort_2_matched", "matched_to_cohort_1", "matched_to_cohort_2"),
+      cohort_name = c("cohort_1", "cohort_2", "cohort_1_sampled", "cohort_2_sampled", "cohort_1_matched", "cohort_2_matched"),
       target_table_name = c(NA, NA, rep("cohort2", 4)),
       target_cohort_id = c(NA, NA, 1L, 2L, 1L, 2L),
-      target_cohort_name = c(NA, NA, "cohort_1_matched", "cohort_2_matched", "cohort_1_matched", "cohort_2_matched"),
+      target_cohort_name = c(NA, NA, "cohort_1_sampled", "cohort_2_sampled", "cohort_1_sampled", "cohort_2_sampled"),
       match_sex = c(NA, NA, rep(TRUE, 4)),
       match_year_of_birth = c(NA, NA, rep(TRUE, 4)),
       match_status = c(NA, NA, "target", "target", "control", "control")
@@ -321,12 +319,12 @@ test_that("test indexes - postgres", {
                        host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
                        user = Sys.getenv("CDM5_POSTGRESQL_USER"),
                        password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
-  cdm <- CDMConnector::cdm_from_con(
+  cdm <- CDMConnector::cdmFromCon(
     con = db,
-    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
-    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-                     prefix = "cc_"),
-    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+    cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+    writePrefix = "cc_",
+    achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
   cdm <- omopgenerics::insertTable(cdm = cdm,
@@ -345,5 +343,5 @@ test_that("test indexes - postgres", {
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
-  CDMConnector::cdm_disconnect(cdm = cdm)
+  CDMConnector::cdmDisconnect(cdm = cdm)
 })

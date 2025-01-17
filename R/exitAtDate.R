@@ -33,10 +33,17 @@ exitAtObservationEnd <- function(cohort,
                                  limitToCurrentPeriod = TRUE,
                                  name = tableName(cohort)) {
   # checks
-  cohort <- validateCohortTable(cohort, dropExtraColumns = TRUE)
+  cohort <- omopgenerics::validateCohortArgument(cohort, dropExtraColumns = TRUE)
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    return(cdm[[name]])
+  }
 
   tmpTable <- omopgenerics::uniqueTableName()
   if (all(cohortId %in% settings(cohort)$cohort_definition_id)) {
@@ -105,7 +112,7 @@ exitAtObservationEnd <- function(cohort,
 
   newCohort <- newCohort |>
     dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
+    omopgenerics::newCohortTable(.softValidation = FALSE) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
   omopgenerics::dropTable(cdm = cdm, name = tmpTable)
@@ -153,10 +160,17 @@ exitAtDeath <- function(cohort,
                         name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
-  cohort <- validateCohortTable(cohort, dropExtraColumns = TRUE)
+  cohort <- omopgenerics::validateCohortArgument(cohort, dropExtraColumns = TRUE)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   omopgenerics::assertLogical(requireDeath, length = 1)
+
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    return(cdm[[name]])
+  }
 
   # create new cohort
   newCohort <- cohort |>
@@ -186,7 +200,7 @@ exitAtDeath <- function(cohort,
     # no overlapping periods
     joinOverlap(name = name) |>
     dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
+    omopgenerics::newCohortTable(.softValidation = FALSE) |>
     omopgenerics::recordCohortAttrition(reason = "Exit at death", cohortId = cohortId)
 
   useIndexes <- getOption("CohortConstructor.use_indexes")

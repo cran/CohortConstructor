@@ -22,12 +22,12 @@ test_that("exit at observation end", {
   expect_true(all(attrition(cdm$cohort)$reason == c("Initial qualifying events", "Exit at observation period end date, limited to current observation period", "Initial qualifying events")))
 
   # additional columns warning
-  expect_message(cdm$cohort <- cdm$cohort |> dplyr::mutate(extra_col = 1) |> exitAtObservationEnd())
+  expect_warning(cdm$cohort <- cdm$cohort |> dplyr::mutate(extra_col = 1) |> exitAtObservationEnd())
   expect_true(all(colnames(cdm$cohort) == c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date")))
 
   # expected errors
   expect_error(cdm$cohort |> exitAtObservationEnd(name = 1))
-  expect_error(cdm$cohort |> exitAtObservationEnd(cohortId = "HI"))
+  expect_warning(cdm$cohort |> exitAtObservationEnd(cohortId = "HI"))
   expect_error(cdm$person |> exitAtObservationEnd())
   PatientProfiles::mockDisconnect(cdm)
 
@@ -157,13 +157,13 @@ test_that("exit at death date", {
   expect_true(all(attrition(cdm$cohort)$reason ==
                     c("Initial qualifying events", "No death recorded", "Exit at death", "Initial qualifying events")))
 
-  # additional columns warning
-  expect_message(cdm$cohort <- cdm$cohort |> dplyr::mutate(extra_col = 1) |> exitAtDeath())
+  # columns warning
+  expect_warning(cdm$cohort <- cdm$cohort |> dplyr::mutate(extra_col = 1) |> exitAtDeath())
   expect_true(all(colnames(cdm$cohort) == c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date")))
 
   # expected errors
   expect_error(cdm$cohort |> exitAtDeath(name = 1))
-  expect_error(cdm$cohort |> exitAtDeath(cohortId = "HI"))
+  expect_warning(cdm$cohort |> exitAtDeath(cohortId = "HI"))
   expect_error(cdm$person |> exitAtDeath())
   expect_error(cdm$person |> exitAtDeath(requireDeath = 1))
 
@@ -180,12 +180,12 @@ test_that("test indexes - postgres", {
                        host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
                        user = Sys.getenv("CDM5_POSTGRESQL_USER"),
                        password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
-  cdm <- CDMConnector::cdm_from_con(
+  cdm <- CDMConnector::cdmFromCon(
     con = db,
-    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
-    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-                     prefix = "cc_"),
-    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+    cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+    writePrefix = "cc_",
+    achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
   cdm <- omopgenerics::insertTable(cdm = cdm,
@@ -211,5 +211,5 @@ test_that("test indexes - postgres", {
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
-  CDMConnector::cdm_disconnect(cdm = cdm)
+  CDMConnector::cdmDisconnect(cdm = cdm)
 })

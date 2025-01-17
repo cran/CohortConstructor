@@ -11,6 +11,8 @@
 #' @inheritParams windowDoc
 #' @inheritParams nameDoc
 #' @inheritParams conceptSetDoc
+#' @param inObservation If TRUE only records inside an observation period will
+#' be considered.
 #'
 #' @return Cohort table with only those  with the events in the concept list
 #' kept (or those without the event if negate = TRUE)
@@ -35,6 +37,7 @@ requireConceptIntersect <- function(cohort,
                                     indexDate = "cohort_start_date",
                                     targetStartDate = "event_start_date",
                                     targetEndDate = "event_end_date",
+                                    inObservation = TRUE,
                                     censorDate = NULL,
                                     name = tableName(cohort)) {
   # checks
@@ -43,9 +46,16 @@ requireConceptIntersect <- function(cohort,
   validateCohortColumn(indexDate, cohort, class = "Date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   window <- omopgenerics::validateWindowArgument(window)
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   intersections <- validateIntersections(intersections)
   conceptSet <- omopgenerics::validateConceptSetArgument(conceptSet, cdm)
+
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    return(cdm[[name]])
+  }
 
   lower_limit <- as.integer(intersections[[1]])
   upper_limit <- intersections[[2]]
@@ -82,6 +92,7 @@ requireConceptIntersect <- function(cohort,
         targetEndDate = targetEndDate,
         window = window,
         censorDate = censorDate,
+        inObservation = inObservation,
         nameStyle = "intersect_concept",
         name = subsetName
       )
@@ -95,7 +106,7 @@ requireConceptIntersect <- function(cohort,
       ) |
         (!.data$cohort_definition_id %in% .env$cohortId)
       ) |>
-      dplyr::select(cols) |>
+      dplyr::select(dplyr::all_of(cols)) |>
       dplyr::compute(name = subsetName, temporary = FALSE)
 
     # attrition reason

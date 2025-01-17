@@ -104,10 +104,17 @@ exitAtColumnDate <- function(cohort,
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  cohortId <- validateCohortId(cohortId, settings(cohort))
+  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   validateCohortColumn(dateColumns, cohort, "Date")
   omopgenerics::assertLogical(returnReason, length = 1)
   ids <- omopgenerics::settings(cohort)$cohort_definition_id
+
+  if (length(cohortId) == 0) {
+    cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    return(cdm[[name]])
+  }
 
   if (order == "first") {
     atDateFunction <- rlang::expr(min(.data$new_date_0123456789, na.rm = TRUE)) # NA always removed in SQL
@@ -216,7 +223,7 @@ exitAtColumnDate <- function(cohort,
   newCohort <- newCohort |>
     dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = TRUE)
+    omopgenerics::newCohortTable(.softValidation = FALSE)
 
   cdm <- omopgenerics::dropTable(cdm, name = dplyr::starts_with(tmpPrefix))
 

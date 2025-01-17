@@ -91,8 +91,8 @@ test_that("expected errors", {
 
   expect_error(sampleCohorts(cdm$cohort2, n = 10))
   expect_error(sampleCohorts(cdm_local$cohort1, n = 10))
-  expect_error(sampleCohorts(cdm$cohort1, cohortId = 4, n = 10))
-  expect_error(sampleCohorts(cdm$cohort1, cohortId = "1", n = 10))
+  expect_warning(sampleCohorts(cdm$cohort1, cohortId = 4, n = 10))
+  expect_warning(sampleCohorts(cdm$cohort1, cohortId = "1", n = 10))
   expect_error(sampleCohorts(cdm$cohort1, n = -1))
   expect_error(sampleCohorts(cdm$cohort1))
   expect_error(sampleCohorts(cdm$cohort1, n = c(1,2)))
@@ -132,12 +132,12 @@ test_that("test indexes - postgres", {
                        host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
                        user = Sys.getenv("CDM5_POSTGRESQL_USER"),
                        password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
-  cdm <- CDMConnector::cdm_from_con(
+  cdm <- CDMConnector::cdmFromCon(
     con = db,
-    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
-    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-                     prefix = "cc_"),
-    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+    cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+    writePrefix = "cc_",
+    achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
   cdm <- omopgenerics::insertTable(cdm = cdm,
@@ -155,5 +155,5 @@ test_that("test indexes - postgres", {
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
-  CDMConnector::cdm_disconnect(cdm = cdm)
+  CDMConnector::cdmDisconnect(cdm = cdm)
 })

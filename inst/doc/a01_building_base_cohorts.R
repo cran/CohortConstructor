@@ -22,9 +22,9 @@ library(CohortConstructor)
 library(dplyr)
 
 con <- DBI::dbConnect(duckdb::duckdb(), 
-                      dbdir = eunomia_dir())
-cdm <- cdm_from_con(con, cdm_schema = "main", 
-                    write_schema = c(prefix = "my_study_", schema = "main"))
+                      dbdir = eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchema = "main", writeSchema = "main", 
+                  writePrefix = "my_study_")
 
 ## -----------------------------------------------------------------------------
 drug_codes <- getDrugIngredientCodes(cdm, 

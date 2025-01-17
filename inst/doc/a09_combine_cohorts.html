@@ -345,9 +345,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
 <p>For this example we’ll use the Eunomia synthetic data from the
 CDMConnector package.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), <span class="at">dbdir =</span> <span class="fu">eunomia_dir</span>())</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdm_from_con</span>(con, <span class="at">cdm_schema =</span> <span class="st">&quot;main&quot;</span>, </span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                    <span class="at">write_schema =</span> <span class="fu">c</span>(<span class="at">prefix =</span> <span class="st">&quot;my_study_&quot;</span>, <span class="at">schema =</span> <span class="st">&quot;main&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                    <span class="at">writeSchema =</span> <span class="fu">c</span>(<span class="at">prefix =</span> <span class="st">&quot;my_study_&quot;</span>, <span class="at">schema =</span> <span class="st">&quot;main&quot;</span>))</span></code></pre></div>
 <p>Let’s start by creating two drug cohorts, one for users of diclofenac
 and another for users of acetaminophen.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(<span class="at">cdm =</span> cdm, </span>

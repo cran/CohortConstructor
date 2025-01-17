@@ -76,7 +76,7 @@ test_that("codelist works", {
 
   cdm <- cdm_local |> copyCdm()
 
-  cdm$cohort1 <- conceptCohort(cdm, conceptSet = list(c1 = c(1,3), c2 = c(2)), name = "cohort1")
+  cdm$cohort1 <- conceptCohort(cdm, conceptSet = list(c1 = c(1L,3L), c2 = c(2L)), name = "cohort1")
 
   # Subset 1 cohort
   cdm$cohort2 <- subsetCohorts(cdm$cohort1, 1, name = "cohort2")
@@ -100,9 +100,9 @@ test_that("Expected behaviour", {
 
   # Subset 1 cohort
   expect_error(cdm$cohort2 <- subsetCohorts("cohort1", 1, name = "cohort2"))
-  expect_error(cdm$cohort2 <- subsetCohorts(cdm$cohort1, "1", name = "cohort2"))
+  expect_warning(cdm$cohort2 <- subsetCohorts(cdm$cohort1, "1", name = "cohort2"))
   expect_error(cdm$cohort2 <- subsetCohorts(cdm$cohort1, 2, name = "cohort3"))
-  expect_error(cdm$cohort2 <- subsetCohorts(cdm$cohort1, 10, name = "cohort2"))
+  expect_warning(cdm$cohort2 <- subsetCohorts(cdm$cohort1, 10, name = "cohort2"))
   expect_no_error(cohort <- subsetCohorts(cdm$cohort1, NULL))
   expect_identical(cohort, cdm$cohort1)
 
@@ -119,12 +119,12 @@ test_that("test indexes - postgres", {
                        host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
                        user = Sys.getenv("CDM5_POSTGRESQL_USER"),
                        password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
-  cdm <- CDMConnector::cdm_from_con(
+  cdm <- CDMConnector::cdmFromCon(
     con = db,
-    cdm_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
-    write_schema = c(schema =  Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-                     prefix = "cc_"),
-    achilles_schema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+    cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
+    writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
+    writePrefix = "cc_",
+    achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
   cdm <- omopgenerics::insertTable(cdm = cdm,
@@ -142,5 +142,5 @@ test_that("test indexes - postgres", {
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
-  CDMConnector::cdm_disconnect(cdm = cdm)
+  CDMConnector::cdmDisconnect(cdm = cdm)
 })
