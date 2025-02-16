@@ -180,4 +180,3 @@ benchmarkData$sql_indexes |>
   ) +
   facet_wrap(vars(cdm_name), scales = "free_x")
 
-

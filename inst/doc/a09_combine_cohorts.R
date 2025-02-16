@@ -1,17 +1,6 @@
 ## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
-)
-
-## ----setup--------------------------------------------------------------------
-library(CohortConstructor)
-library(CohortCharacteristics)
-library(ggplot2)
-
-## ----include = FALSE----------------------------------------------------------
-knitr::opts_chunk$set(
-  collapse = TRUE,
   eval = TRUE, message = FALSE, warning = FALSE,
   comment = "#>"
 )
@@ -24,6 +13,11 @@ if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
 if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
   downloadEunomiaData()  
 }
+
+## ----setup--------------------------------------------------------------------
+library(CohortConstructor)
+library(CohortCharacteristics)
+library(ggplot2)
 
 ## -----------------------------------------------------------------------------
 con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())

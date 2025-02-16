@@ -30,9 +30,9 @@ test_that("require flag in concept", {
 
   start_cols <- colnames(cdm$cohort1)
   cdm$cohort3 <-  requireConceptIntersect(cohort = cdm$cohort1,
-                                              conceptSet = list(a = 1L),
-                                              window = c(-Inf, Inf),
-                                              name = "cohort3")
+                                          conceptSet = list(a = 1L),
+                                          window = c(-Inf, Inf),
+                                          name = "cohort3")
   expect_identical(colnames(cdm$cohort3), colnames(cdm$cohort1))
   expect_true(all(cdm$cohort3 |> dplyr::pull("subject_id") == 1L))
   expect_true(all(cdm$cohort3 |> dplyr::pull("cohort_start_date") |> sort() ==
@@ -70,10 +70,10 @@ test_that("require flag in concept", {
                       "Initial qualifying events")))
   # censor date
   cdm$cohort5 <- requireConceptIntersect(cohort = cdm$cohort1,
-                                             conceptSet = list(a = 1L),
-                                             window = c(-Inf, Inf),
-                                             censorDate = "cohort_end_date",
-                                             name = "cohort5")
+                                         conceptSet = list(a = 1L),
+                                         window = c(-Inf, Inf),
+                                         censorDate = "cohort_end_date",
+                                         name = "cohort5")
   expect_true(cdm$cohort5 |> dplyr::pull("subject_id") |> length() == 0)
   expect_true(all(omopgenerics::attrition(cdm$cohort5)$reason ==
                     c("Initial qualifying events",
@@ -83,8 +83,8 @@ test_that("require flag in concept", {
 
   # name
   cdm$cohort1 <-  requireConceptIntersect(cohort = cdm$cohort1,
-                                              conceptSet = list(a = 1L),
-                                              window = c(-Inf, Inf))
+                                          conceptSet = list(a = 1L),
+                                          window = c(-Inf, Inf))
   expect_true(all(omopgenerics::attrition(cdm$cohort1)$reason ==
                     c("Initial qualifying events",
                       "Concept a between -Inf & Inf days relative to cohort_start_date between 1 and Inf",
@@ -93,28 +93,25 @@ test_that("require flag in concept", {
 
   # empty concept
   expect_message(
-    cdm$cohort1 <-  requireConceptIntersect(cohort = cdm$cohort1,
+    cdm$cohort1_equal <-  requireConceptIntersect(cohort = cdm$cohort1,
                                             conceptSet = list(),
-                                            window = list(c(-Inf, Inf)))
+                                            window = list(c(-Inf, Inf)),
+                                            name = "cohort1_equal")
   )
-  expect_true(all(omopgenerics::attrition(cdm$cohort1)$reason ==
+  expect_true(all(omopgenerics::attrition(cdm$cohort1_equal)$reason ==
                     c("Initial qualifying events",
                       "Concept a between -Inf & Inf days relative to cohort_start_date between 1 and Inf",
                       "Initial qualifying events",
                       "Concept a between -Inf & Inf days relative to cohort_start_date between 1 and Inf")))
+  expect_equal(collectCohort(cdm$cohort1_equal,1), collectCohort(cdm$cohort1, 1))
 
   # expected errors
   # only support one concept at the moment
- expect_error(
-   requireConceptIntersect(cohort = cdm$cohort1,
-                               conceptSet = list(a = 1L, b = 2L),
-                               window = c(-Inf, Inf))
- )
- expect_error(
-   requireConceptIntersect(cohort = cdm$cohort1,
-                               conceptSet = NULL,
-                               window = c(-Inf, Inf))
- )
+  expect_error(
+    requireConceptIntersect(cohort = cdm$cohort1,
+                            conceptSet = list(a = 1L, b = 2L),
+                            window = c(-Inf, Inf))
+  )
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -321,10 +318,9 @@ test_that("test indexes - postgres", {
     con = db,
     cdmSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA"),
     writeSchema = Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA"),
-    writePrefix = "cc_",
+    writePrefix = "cc_test_",
     achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
-
   cdm <- omopgenerics::insertTable(cdm = cdm,
                                    name = "my_cohort",
                                    table = data.frame(cohort_definition_id = 1L,
@@ -332,14 +328,62 @@ test_that("test indexes - postgres", {
                                                       cohort_start_date = as.Date("2009-01-02"),
                                                       cohort_end_date = as.Date("2009-01-03"),
                                                       other_date = as.Date("2009-01-01")))
+  expect_no_error(cdm$my_cohort |> head(1))
   cdm$my_cohort <- omopgenerics::newCohortTable(cdm$my_cohort)
-  cdm$my_cohort <- requireConceptIntersect(cdm$my_cohort, conceptSet = list(a = 0), window = list(c(0, Inf)))
-
+  expect_no_error(omopgenerics::settings(cdm$my_cohort))
+  cdm$my_cohort <- requireConceptIntersect(cdm$my_cohort,
+                                           conceptSet = list(a = 0),
+                                           window = list(c(0, Inf)))
+  expect_no_error(cdm$my_cohort |> head(1))
+  expect_no_error(omopgenerics::settings(cdm$my_cohort))
   expect_true(
-    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_my_cohort';")) |> dplyr::pull("indexdef") ==
-      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
+    DBI::dbGetQuery(db, paste0("SELECT * FROM pg_indexes WHERE tablename = 'cc_test_my_cohort';")) |> dplyr::pull("indexdef") ==
+      "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_test_my_cohort USING btree (subject_id, cohort_start_date)"
   )
 
   omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  CDMConnector::cdmDisconnect(cdm = cdm)
+})
+
+test_that("codelists", {
+  skip_on_cran()
+  cdm_local <- omock::mockCdmReference() |>
+    omock::mockPerson(n = 4, seed = 1) |>
+    omock::mockObservationPeriod(seed = 1) |>
+    omock::mockCohort(name = c("cohort1"), numberCohorts = 2, seed = 1)  |>
+    omock::mockConditionOccurrence()
+  cdm <- cdm_local |> copyCdm()
+
+  cdm$cohort2 <- conceptCohort(cdm, list("a" = 194152L, "b" = 4151660L), name = "cohort2")
+  # Only inclusion codes
+  cdm$cohort3 <-  requireConceptIntersect(cohort = cdm$cohort1,
+                                          conceptSet = list("a" = 194152L),
+                                          intersections = 0,
+                                          window = c(-Inf, 0),
+                                          name = "cohort3")
+  expect_identical(
+    attr(cdm$cohort3, "cohort_codelist") |> dplyr::collect(),
+    dplyr::tibble(
+      cohort_definition_id = 1:2,
+      codelist_name = "a",
+      concept_id = 194152L,
+      type = "inclusion criteria"
+    )
+  )
+
+  # no inlcusion codes
+  cdm$cohort4 <-  requireConceptIntersect(cohort = cdm$cohort2,
+                                          conceptSet = list("a" = 194152L),
+                                          window = c(-Inf, Inf),
+                                          name = "cohort4")
+  expect_identical(
+    attr(cdm$cohort4, "cohort_codelist") |> dplyr::collect(),
+    dplyr::tibble(
+      cohort_definition_id = c(1L, 1L, 2L, 2L),
+      codelist_name = c("a", "a", "b", "a"),
+      concept_id = c(194152L, 194152L, 4151660L, 194152L),
+      type = c("index event", "inclusion criteria", "index event", "inclusion criteria")
+    )
+  )
   CDMConnector::cdmDisconnect(cdm = cdm)
 })

@@ -53,7 +53,16 @@ requireConceptIntersect <- function(cohort,
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
     # return entry cohort as cohortId is used to modify not subset
-    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE,
+                                            logPrefix = "CohortConstructor_requireConceptIntersect_entry_1_")
+    return(cdm[[name]])
+  }
+
+  if (length(conceptSet) == 0) {
+    cli::cli_inform("Returning entry cohort as `conceptSet` is empty.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE,
+                                            logPrefix = "CohortConstructor_requireConceptIntersect_entry_2_")
     return(cdm[[name]])
   }
 
@@ -107,7 +116,8 @@ requireConceptIntersect <- function(cohort,
         (!.data$cohort_definition_id %in% .env$cohortId)
       ) |>
       dplyr::select(dplyr::all_of(cols)) |>
-      dplyr::compute(name = subsetName, temporary = FALSE)
+      dplyr::compute(name = subsetName, temporary = FALSE,
+                     logPrefix = "CohortConstructor_requireConceptIntersect_subset_")
 
     # attrition reason
     if (all(intersections == 0)) {
@@ -132,10 +142,19 @@ requireConceptIntersect <- function(cohort,
       reason <- glue::glue("{reason}, censoring at {censorDate}")
     }
 
+    #codelist
+    newCodelist <- getIntersectionCodelist(
+      cohort, cohortId, conceptSetToCohortCodelist(conceptSet)
+    )
+
+    # cohort
     cohort <- cohort |>
       dplyr::inner_join(subsetCohort, by = c(cols)) |>
-      dplyr::compute(name = name, temporary = FALSE) |>
-      omopgenerics::newCohortTable(.softValidation = TRUE) |>
+      dplyr::compute(name = name, temporary = FALSE,
+                     logPrefix = "CohortConstructor_requireConceptIntersect_join_") |>
+      omopgenerics::newCohortTable(
+        .softValidation = TRUE, cohortCodelistRef = newCodelist
+      ) |>
       omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
     omopgenerics::dropTable(cdm = cdm, name = subsetName)
@@ -150,4 +169,20 @@ requireConceptIntersect <- function(cohort,
   }
 
   return(cohort)
+}
+
+getIntersectionCodelist <- function(cohort, cohortId, codelist) {
+  criteria <- "inclusion criteria"
+  intersectCodelist <- lapply(
+    as.list(cohortId),
+    function(x, tab = codelist) {
+      tab |> dplyr::mutate(cohort_definition_id = .env$x)
+    }) |>
+    dplyr::bind_rows() |>
+    dplyr::mutate(type = .env$criteria)
+  newCodelist <- attr(cohort, "cohort_codelist") |>
+    dplyr::collect() |>
+    dplyr::union(intersectCodelist) |>
+    dplyr::arrange(.data$cohort_definition_id)
+  return(newCodelist)
 }

@@ -29,28 +29,14 @@ cdm$medications <- conceptCohort(cdm = cdm,
                                                    "acetaminophen" = 1127433), 
                                  name = "medications")
 cohortCount(cdm$medications)
+settings(cdm$medications)
 
 ## -----------------------------------------------------------------------------
 cdm$stratified <- cdm$medications |>
   addAge(ageGroup = list("Child" = c(0,17), "18 to 65" = c(18,64), "65 and Over" = c(65, Inf))) |>
   addSex(name = "stratified") |>
-  stratifyCohorts(strata = list("sex", "age_group", c("sex", "age_group")), name = "stratified")
+  stratifyCohorts(strata = list("sex", "age_group"), name = "stratified")
 
+cohortCount(cdm$stratified)
 settings(cdm$stratified)
-
-## ----include=FALSE, warning=FALSE---------------------------------------------
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-cdm <- cdmFromCon(con, cdmSchema = "main", 
-                    writeSchema = c(prefix = "my_study_", schema = "main"))
-
-cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
-                                 name = "medications")
-
-## -----------------------------------------------------------------------------
-cdm$years <- cdm$medications |>
-  yearCohorts(years = 2005:2010, name = "years")
-
-settings(cdm$years)
 

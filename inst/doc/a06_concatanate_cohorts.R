@@ -32,14 +32,13 @@ cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main",
 
 ## -----------------------------------------------------------------------------
 cdm$medications <- conceptCohort(cdm = cdm, 
-                                 conceptSet = list("diclofenac" = 1124300,
-                                                   "acetaminophen" = 1127433), 
+                                 conceptSet = list("acetaminophen" = 1127433), 
                                  name = "medications")
 cohortCount(cdm$medications)
 
 ## -----------------------------------------------------------------------------
-cdm$medications_collapsed <- collapseCohorts(
-  cohort = cdm$medications,
+cdm$medications_collapsed <- cdm$medications |> 
+  collapseCohorts(
   gap = 1095,
   name = "medications_collapsed"
 )
@@ -52,9 +51,5 @@ cdm$medications_collapsed |>
 
 ## -----------------------------------------------------------------------------
 summary_attrition <- summariseCohortAttrition(cdm$medications_collapsed)
-plotCohortAttrition(summary_attrition, cohortId = 1)
-
-## -----------------------------------------------------------------------------
-summary_attrition <- summariseCohortAttrition(cdm$medications_collapsed)
-plotCohortAttrition(summary_attrition, cohortId = 2)
+tableCohortAttrition(summary_attrition)
 

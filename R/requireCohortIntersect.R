@@ -41,17 +41,42 @@ requireCohortIntersect <- function(cohort,
   cohort <- omopgenerics::validateCohortArgument(cohort)
   validateCohortColumn(indexDate, cohort, class = "Date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
+  omopgenerics::validateCohortArgument(cdm[[targetCohortTable]])
   window <- omopgenerics::validateWindowArgument(window)
-  cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+  cohortId <- omopgenerics::validateCohortIdArgument(
+    {{cohortId}}, cohort, validation = "warning"
+  )
+  targetCohortId <- omopgenerics::validateCohortIdArgument(
+    {{targetCohortId}}, cdm[[targetCohortTable]], validation = "error"
+  )
   intersections <- validateIntersections(intersections)
+
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
     # return entry cohort as cohortId is used to modify not subset
-    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE)
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE,
+                                            logPrefix = "CohortConstructor_requireCohortIntersect_entry_1_")
     return(cdm[[name]])
   }
 
+  if (cdm[[targetCohortTable]] |>
+      dplyr::filter(.data$cohort_definition_id %in% .env$targetCohortId) |>
+      dplyr::tally() |>
+      dplyr::pull() == 0) {
+    cli::cli_inform("Returning entry cohort as the target cohort to intersect is empty.")
+    # return entry cohort as cohortId is used to modify not subset
+    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE,
+                                            logPrefix = "CohortConstructor_requireCohortIntersect_entry_2_")
+    return(cdm[[name]])
+  }
+
+  # targetCohortId must be singular
+  if (length(targetCohortId) > 1) {
+    cli::cli_abort(c("requireCohortIntersect can only be use with one rarget cohort at a time.",
+                     "i" = "Cohort IDs {targetCohortId} found in targetCohortTable {targetCohortTable}",
+                     "i" = "Use targetCohortId argument to specify just one cohort for intersection"))
+  }
   lower_limit <- as.integer(intersections[[1]])
   upper_limit <- intersections[[2]]
   upper_limit[is.infinite(upper_limit)] <- 999999L
@@ -113,7 +138,8 @@ requireCohortIntersect <- function(cohort,
       (!.data$cohort_definition_id %in% .env$cohortId)
     ) |>
     dplyr::select(dplyr::all_of(cols)) |>
-    dplyr::compute(name = subsetName, temporary = FALSE)
+    dplyr::compute(name = subsetName, temporary = FALSE,
+                   logPrefix = "CohortConstructor_requireCohortIntersect_subset_")
 
   # attrition reason
   if (all(intersections == 0)) {
@@ -138,11 +164,22 @@ requireCohortIntersect <- function(cohort,
     reason <- glue::glue("{reason}, censoring at {censorDate}")
   }
 
+  # codelist
+  targetCodelist <- attr(cdm[[targetCohortTable]], "cohort_codelist") |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$targetCohortId) |>
+    dplyr::collect()
+  newCodelist <- getIntersectionCodelist(
+    cohort, cohortId, targetCodelist
+  )
+
   # add additional columns
   x <- cohort |>
     dplyr::inner_join(subsetCohort, by = c(cols)) |>
-    dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
+    dplyr::compute(name = name, temporary = FALSE,
+                   logPrefix = "CohortConstructor_requireCohortIntersect_additional_") |>
+    omopgenerics::newCohortTable(
+      .softValidation = TRUE, cohortCodelistRef = newCodelist
+    ) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
   omopgenerics::dropTable(cdm = cdm, name = subsetName)
