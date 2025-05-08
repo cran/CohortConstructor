@@ -13,6 +13,7 @@
 #' @inheritParams keepOriginalCohortsDoc
 #' @param returnNonOverlappingCohorts Whether the generated cohorts are mutually
 #' exclusive or not.
+#' @inheritParams softValidationDoc
 #'
 #' @export
 #'
@@ -37,7 +38,8 @@ intersectCohorts <- function(cohort,
                              gap = 0,
                              returnNonOverlappingCohorts = FALSE,
                              keepOriginalCohorts = FALSE,
-                             name = tableName(cohort)) {
+                             name = tableName(cohort),
+                             .softValidation = FALSE) {
   # checks
   cohort <- omopgenerics::validateCohortArgument(cohort)
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
@@ -46,14 +48,15 @@ intersectCohorts <- function(cohort,
   omopgenerics::assertNumeric(gap, integerish = TRUE, min = 0, length = 1)
   omopgenerics::assertLogical(returnNonOverlappingCohorts, length = 1)
   omopgenerics::assertLogical(keepOriginalCohorts, length = 1)
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) < 2) {
     cli::cli_abort("Settings of cohort table must contain at least two cohorts.")
   }
 
-  uniquePrefix <- omopgenerics::tmpPrefix()
+  tablePrefix <- omopgenerics::tmpPrefix()
   if (keepOriginalCohorts) {
-    originalNm <- omopgenerics::uniqueTableName(prefix = uniquePrefix)
+    originalNm <- omopgenerics::uniqueTableName(prefix = tablePrefix)
     originalCohorts <- subsetCohorts(
       cohort = cohort,
       cohortId = cohortId,
@@ -61,11 +64,14 @@ intersectCohorts <- function(cohort,
     )
   }
 
+  tblName <- omopgenerics::uniqueTableName(prefix = tablePrefix)
+  newCohort <- copyCohorts(cohort,
+                           name = tblName,
+                           cohortId = cohortId,
+                           .softValidation = .softValidation)
   # get intersections between cohorts
-  tblName <- omopgenerics::uniqueTableName(prefix = uniquePrefix)
   lowerWindow <- ifelse(gap != 0, -gap, gap)
-  cohortOut <- cohort |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+  newCohort <- newCohort |>
     dplyr::select(-"cohort_definition_id") |>
     splitOverlap(by = "subject_id", name = tblName, tmp = paste0(tblName)) |>
     PatientProfiles::addCohortIntersectFlag(
@@ -118,20 +124,20 @@ intersectCohorts <- function(cohort,
     dplyr::mutate(cohort_definition_id = as.integer(dplyr::row_number()))
 
   # intersect cohort
-  setName <- omopgenerics::uniqueTableName(prefix = uniquePrefix)
+  setName <- omopgenerics::uniqueTableName(prefix = tablePrefix)
   cdm <- omopgenerics::insertTable(
     cdm = cdm,
     name = setName,
     table = cohSet
   )
-  cohortOut <- cohortOut |>
+  newCohort <- newCohort |>
     dplyr::inner_join(cdm[[setName]], by = cohortNames) |>
     dplyr::select("cohort_definition_id", "subject_id",
                   "cohort_start_date", "cohort_end_date") |>
     dplyr::compute(name = tblName, temporary = FALSE,
                    logPrefix = "CohortConstructor_intersectCohorts_out_")
-  if (cohortOut |> dplyr::tally() |> dplyr::pull("n") > 0) {
-    cohortOut <- cohortOut |>
+  if (newCohort |> dplyr::tally() |> dplyr::pull("n") > 0) {
+    newCohort <- newCohort |>
       PatientProfiles::addObservationPeriodId(name = tblName) |>
       joinOverlap(
         name = tblName, gap = gap,
@@ -141,7 +147,7 @@ intersectCohorts <- function(cohort,
   }
 
   # attributes
-  counts <- cohortOut |>
+  counts <- newCohort |>
     dplyr::group_by(.data$cohort_definition_id) |>
     dplyr::summarise(
       number_records = dplyr::n() |> as.integer(),
@@ -194,29 +200,28 @@ intersectCohorts <- function(cohort,
 
   # intersect cohort
   if (keepOriginalCohorts) {
-    cohortOut <- omopgenerics::newCohortTable(
-      table = cohortOut,
+    newCohort <- omopgenerics::newCohortTable(
+      table = newCohort,
       cohortSetRef = cohSet,
       cohortAttritionRef = intersectAttrition,
       cohortCodelistRef = intersectCodelist,
-      .softValidation = FALSE
+      .softValidation = .softValidation
     )
-    cdm <- bind(originalCohorts, cohortOut, name = name)
+    cdm <- bind(originalCohorts, newCohort, name = name)
   } else {
-    cohortOut <- cohortOut |>
+    newCohort <- newCohort |>
       dplyr::compute(name = name, temporary = FALSE,
                      logPrefix = "CohortConstructor_intersectCohorts_keepOriginalCohorts_")
     cdm[[name]] <- omopgenerics::newCohortTable(
-      table = cohortOut,
+      table = newCohort,
       cohortSetRef = cohSet,
       cohortAttritionRef = intersectAttrition,
       cohortCodelistRef = intersectCodelist,
-      .softValidation = FALSE
+      .softValidation = .softValidation
     )
   }
 
-  CDMConnector::dropTable(cdm, name = dplyr::starts_with(uniquePrefix))
-  CDMConnector::dropTable(cdm, name = tblName)
+  CDMConnector::dropTable(cdm, name = dplyr::starts_with(tablePrefix))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {
@@ -361,7 +366,7 @@ joinOverlap <- function(cohort,
     dplyr::mutate("date_id" = 1)
   if (gap > 0) {
     end <- end |>
-      dplyr::mutate("date" = as.Date(clock::add_days(x = .data$date, n = gap)))
+      dplyr::mutate("date" = as.Date(clock::add_days(x = .data$date, n = .env$gap)))
   }
   workingTbl <- omopgenerics::uniqueTableName()
   x <- start |>
@@ -383,11 +388,11 @@ joinOverlap <- function(cohort,
     dplyr::ungroup() |>
     dplyr::arrange() |>
     dplyr::select(dplyr::all_of(c(by, "era_id", "name", "date"))) |>
-    dplyr::compute(temporary = FALSE, name = name,
+    dplyr::compute(temporary = FALSE, name = workingTbl,
                    logPrefix = "CohortConstructor_joinOverlap_ids_") |>
     tidyr::pivot_wider(names_from = "name", values_from = "date") |>
     dplyr::select(-"era_id") |>
-    dplyr::compute(temporary = FALSE, name = name,
+    dplyr::compute(temporary = FALSE, name = workingTbl,
                    logPrefix = "CohortConstructor_joinOverlap_pivot_wider_")
   if (gap > 0) {
     x <- x |>
@@ -400,7 +405,7 @@ joinOverlap <- function(cohort,
     dplyr::compute(temporary = FALSE, name = name,
                    logPrefix = "CohortConstructor_joinOverlap_relocate_")
 
-  omopgenerics::dropTable(cdm = cdm, name = workingTbl)
+  omopgenerics::dropSourceTable(cdm = cdm, name = workingTbl)
 
   return(x)
 }

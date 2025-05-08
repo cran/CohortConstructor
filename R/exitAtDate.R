@@ -10,6 +10,7 @@
 #' @param limitToCurrentPeriod If TRUE, limits the cohort to one entry per
 #' person, ending at the current observation period. If FALSE, subsequent
 #' observation periods will create new cohort entries.
+#' @inheritParams softValidationDoc
 #'
 #' @return The cohort table.
 #'
@@ -31,33 +32,30 @@
 exitAtObservationEnd <- function(cohort,
                                  cohortId = NULL,
                                  limitToCurrentPeriod = TRUE,
-                                 name = tableName(cohort)) {
+                                 name = tableName(cohort),
+                                 .softValidation = FALSE) {
   # checks
   cohort <- omopgenerics::validateCohortArgument(cohort, dropExtraColumns = TRUE)
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
     # return entry cohort as cohortId is used to modify not subset
     cdm[[name]] <- cohort |>
       dplyr::compute(name = name, temporary = FALSE,
-                    logPrefix = "CohortConstructor_exitAtObservationEnd_entry_")
+                     logPrefix = "CohortConstructor_exitAtObservationEnd_entry_")
     return(cdm[[name]])
   }
 
-  tmpTable <- omopgenerics::uniqueTableName()
-  if (all(cohortId %in% settings(cohort)$cohort_definition_id)) {
-    newCohort <- cohort |>
-      dplyr::compute(name = tmpTable, temporary = FALSE,
-                     logPrefix = "CohortConstructor_exitAtObservationEnd_copy_")
-  } else {
-    newCohort <- cohort |>
-      dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
-      dplyr::compute(name = tmpTable, temporary = FALSE,
-                     logPrefix = "CohortConstructor_exitAtObservationEnd_filter_")
-  }
+  # temp tables
+  tablePrefix <- omopgenerics::tmpPrefix()
+  tmpNewCohort <- omopgenerics::uniqueTableName(tablePrefix)
+  tmpUnchanged <- omopgenerics::uniqueTableName(tablePrefix)
+  cdm <- filterCohortInternal(cdm, cohort, cohortId, tmpNewCohort, tmpUnchanged)
+  newCohort <- cdm[[tmpNewCohort]]
 
   newCohort <- newCohort |>
     dplyr::inner_join(
@@ -71,7 +69,7 @@ exitAtObservationEnd <- function(cohort,
     ) |>
     # filter to current or future observation periods
     dplyr::filter(.data$observation_period_end_date >= .data$cohort_end_date) |>
-    dplyr::compute(name = tmpTable, temporary = FALSE,
+    dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                    logPrefix = "CohortConstructor_exitAtObservationEnd_filterFuture_")
 
   if (limitToCurrentPeriod) {
@@ -79,7 +77,7 @@ exitAtObservationEnd <- function(cohort,
     newCohort <- newCohort |>
       # filter to current observation period
       dplyr::filter(.data$observation_period_start_date <= .data$cohort_start_date) |>
-      dplyr::compute(name = tmpTable, temporary = FALSE,
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                      logPrefix = "CohortConstructor_exitAtObservationEnd_limitToCurrentPeriod_")
 
   } else {
@@ -94,7 +92,7 @@ exitAtObservationEnd <- function(cohort,
           .data$cohort_start_date
         )
       ) |>
-      dplyr::compute(name = tmpTable, temporary = FALSE,
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                      logPrefix = "CohortConstructor_exitAtObservationEnd_exit_")
   }
 
@@ -107,23 +105,20 @@ exitAtObservationEnd <- function(cohort,
       )
     ) |>
     # no overlapping periods
-    joinOverlap(name = tmpTable)
+    joinOverlap(name = tmpNewCohort)
 
-  if (!all(cohortId %in% settings(cohort)$cohort_definition_id)) {
-    newCohort <- newCohort |>
-      dplyr::union_all(
-        cohort |> dplyr::filter(!.data$cohort_definition_d %in% .env$cohortId)
-      ) |>
-      dplyr::compute(name = tmpTable, temporary = FALSE,
-                     logPrefix = "CohortConstructor_exitAtObservationEnd_union_")
+  if (isTRUE(needsIdFilter(cohort = cohort, cohortId = cohortId))) {
+    newCohort <- cdm[[tmpUnchanged]] |>
+      dplyr::select(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
+      dplyr::union_all(newCohort)
   }
 
   newCohort <- newCohort |>
     dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = FALSE) |>
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
-  omopgenerics::dropTable(cdm = cdm, name = tmpTable)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {
@@ -144,6 +139,7 @@ exitAtObservationEnd <- function(cohort,
 #' @inheritParams nameDoc
 #' @param requireDeath If TRUE, subjects without a death record will be dropped,
 #' while if FALSE their end date will be left as is.
+#' @inheritParams softValidationDoc
 #'
 #' @return The cohort table.
 #'
@@ -165,31 +161,39 @@ exitAtObservationEnd <- function(cohort,
 exitAtDeath <- function(cohort,
                         cohortId = NULL,
                         requireDeath = FALSE,
-                        name = tableName(cohort)) {
+                        name = tableName(cohort),
+                        .softValidation = FALSE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort, dropExtraColumns = TRUE)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   omopgenerics::assertLogical(requireDeath, length = 1)
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
     # return entry cohort as cohortId is used to modify not subset
     cdm[[name]] <- cohort |>
       dplyr::compute(name = name, temporary = FALSE,
-                    logPrefix = "CohortConstructor_exitAtDeath_entry_")
+                     logPrefix = "CohortConstructor_exitAtDeath_entry_")
     return(cdm[[name]])
   }
 
+  # temp tables
+  tablePrefix <- omopgenerics::tmpPrefix()
+  tmpNewCohort <- omopgenerics::uniqueTableName(tablePrefix)
+  tmpUnchanged <- omopgenerics::uniqueTableName(tablePrefix)
+  cdm <- filterCohortInternal(cdm, cohort, cohortId, tmpNewCohort, tmpUnchanged)
+  newCohort <- cdm[[tmpNewCohort]]
+
   # create new cohort
-  newCohort <- cohort |>
-    PatientProfiles::addDeathDate(name = name) |>
+  newCohort <- newCohort |>
+    PatientProfiles::addDeathDate(name = tmpNewCohort) |>
     # exit
     dplyr::mutate(
       "cohort_end_date" = dplyr::if_else(
-        .data$cohort_definition_id %in% .env$cohortId &
-          !is.na(.data$date_of_death),
+        !is.na(.data$date_of_death),
         .data$date_of_death,
         .data$cohort_end_date
       )
@@ -197,23 +201,36 @@ exitAtDeath <- function(cohort,
 
   if (requireDeath) {
     newCohort <- newCohort |>
-      dplyr::filter(!is.na(.data$date_of_death) |
-                      !.data$cohort_definition_id %in% .env$cohortId) |>
-      dplyr::compute(name = name, temporary = FALSE,
+      dplyr::filter(!is.na(.data$date_of_death)) |>
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                      logPrefix = "CohortConstructor_exitAtDeath_requireDeath_") |>
       omopgenerics::recordCohortAttrition(reason = "No death recorded", cohortId = cohortId)
-  } else {
-    newCohort <- newCohort |>
-      dplyr::compute(name = name, temporary = FALSE)
   }
 
   newCohort <- newCohort |>
     # no overlapping periods
-    joinOverlap(name = name) |>
-    dplyr::compute(name = name, temporary = FALSE) |>
-    omopgenerics::newCohortTable(.softValidation = FALSE) |>
-    omopgenerics::recordCohortAttrition(reason = "Exit at death",
-                                        cohortId = cohortId)
+    joinOverlap(name = tmpNewCohort)
+
+  if (isTRUE(needsIdFilter(cohort = cohort, cohortId = cohortId))) {
+    newCohort <- newCohort |>
+      dplyr::union_all(
+        cdm[[tmpUnchanged]] |>
+          dplyr::select(dplyr::all_of(omopgenerics::cohortColumns("cohort")))
+      )
+  }
+
+  newCohort <- newCohort |>
+    dplyr::compute(
+      name = name, temporary = FALSE,
+      logPrefix = "CohortConstructor_exitAtDeath_name_"
+    ) |>
+    omopgenerics::newCohortTable(
+      cohortAttritionRef = attrition(newCohort),
+      .softValidation = .softValidation
+    ) |>
+    omopgenerics::recordCohortAttrition(reason = "Exit at death", cohortId = cohortId)
+
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {

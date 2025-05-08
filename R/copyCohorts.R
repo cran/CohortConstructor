@@ -7,6 +7,7 @@
 #' @inheritParams nameDoc
 #' @inheritParams cohortIdSubsetDoc
 #' @param n Number of times to duplicate the selected cohorts.
+#' @inheritParams softValidationDoc
 #'
 #' @return A new cohort table containing cohorts from the original cohort table.
 #' @export
@@ -17,23 +18,23 @@
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort3 <- copyCohorts(cdm$cohort1, n = 2, cohortId = 1, name = "cohort3")
 #'}
-copyCohorts <- function(cohort, name, n = 1, cohortId = NULL) {
+copyCohorts <- function(cohort, name, n = 1, cohortId = NULL, .softValidation = TRUE) {
   omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::cdmReference(cohort)
   omopgenerics::validateNameArgument(name, cdm = cdm, validation = "warning")
   omopgenerics::assertNumeric(x = n, integerish = TRUE, min = 1, length = 1)
   if (is.infinite(n)) cli::cli_abort("`n` cannot be infinite.")
-  cohorts_to_keep <- omopgenerics::validateCohortIdArgument(cohortId, cohort = cohort)
+  cohortId <- omopgenerics::validateCohortIdArgument(cohortId, cohort = cohort)
+  omopgenerics::assertLogical(.softValidation)
 
   # subset cohort
-  if (length(unique(cohorts_to_keep)) ==
-      length(settings(cohort) |>  dplyr::pull("cohort_definition_id"))) {
+  if (isFALSE(needsIdFilter(cohort = cohort, cohortId = cohortId))){
     newCohort <- cohort |>
       dplyr::compute(name = name, temporary = FALSE, overwrite = TRUE,
                      logPrefix = "CohortConstructor_copyCohors_subset_")
   } else {
     newCohort <- cohort |>
-      CohortConstructor::subsetCohorts(cohortId = cohorts_to_keep, name = name)
+      CohortConstructor::subsetCohorts(cohortId = cohortId, name = name, .softValidation = .softValidation)
   }
 
   # duplicate
@@ -48,8 +49,17 @@ copyCohorts <- function(cohort, name, n = 1, cohortId = NULL) {
       omopgenerics::newCohortTable(
         cohortSetRef = set,
         cohortAttritionRef = att,
-        cohortCodelistRef = codes
+        cohortCodelistRef = codes,
+        .softValidation = .softValidation
       )
+  }
+
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
   }
 
   return(newCohort)

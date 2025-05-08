@@ -44,6 +44,12 @@
 #' @param subsetCohortId Optional. Specifies cohort IDs from the `subsetCohort`
 #' table to include. If none are provided, all cohorts from the `subsetCohort`
 #' are included.
+#' @param table Name of OMOP tables to search for records of the concepts
+#' provided. If NULL, each concept will be search at the assigned domain in
+#' the concept table.
+#' @param inObservation If TRUE, only records in observation will be used. If
+#' FALSE, records before the start of observation period will be considered,
+#' with startdate the start of observation.
 #'
 #' @export
 #'
@@ -53,20 +59,40 @@
 #' \donttest{
 #' library(CohortConstructor)
 #'
-#' cdm <- mockCohortConstructor(conditionOccurrence = TRUE)
+#' cdm <- mockCohortConstructor(conditionOccurrence = TRUE, drugExposure = TRUE)
 #'
-#' cohort <- conceptCohort(cdm = cdm, conceptSet = list(a = 1), name = "cohort")
+#' cdm$cohort <- conceptCohort(cdm = cdm, conceptSet = list(a = 444074), name = "cohort")
 #'
-#' cohort |> attrition()
+#' cdm$cohort |> attrition()
+#'
+#' # Create a cohort based on a concept set. The cohort exit is set to the event start date.
+#' # If two records overlap, the cohort end date is set as the sum of the duration of
+#' # all overlapping records. Only individuals included in the existing `cohort` will be considered.
+#'
+#' conceptSet <- list("nitrogen" = c(35604434, 35604439),
+#' "potassium" = c(40741270, 42899580, 44081436))
+#'
+#' cohort_drugs <- conceptCohort(cdm,
+#'                              conceptSet = conceptSet,
+#'                              name = "cohort_drugs",
+#'                              exit = "event_start_date",
+#'                              overlap = "extend",
+#'                              subsetCohort = "cohort"
+#' )
+#'
+#' cohort_drugs |> attrition()
 #' }
 conceptCohort <- function(cdm,
                           conceptSet,
                           name,
                           exit = "event_end_date",
                           overlap = "merge",
+                          inObservation = TRUE,
+                          table = NULL,
                           useSourceFields = FALSE,
                           subsetCohort = NULL,
                           subsetCohortId = NULL) {
+
   # initial input validation
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cdm <- omopgenerics::validateCdmArgument(cdm)
@@ -74,11 +100,13 @@ conceptCohort <- function(cdm,
   omopgenerics::assertChoice(exit, c("event_start_date", "event_end_date"))
   omopgenerics::assertChoice(overlap, c("merge", "extend"), length = 1)
   omopgenerics::assertLogical(useSourceFields, length = 1)
+  omopgenerics::assertLogical(inObservation, length = 1)
   omopgenerics::assertCharacter(subsetCohort, length = 1, null = TRUE)
   if (!is.null(subsetCohort)) {
     subsetCohort <- omopgenerics::validateCohortArgument(cdm[[subsetCohort]])
     subsetCohortId <- omopgenerics::validateCohortIdArgument({{subsetCohortId}}, subsetCohort, validation = "warning")
   }
+  table <- validateTable(table)
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
 
@@ -101,7 +129,8 @@ conceptCohort <- function(cdm,
   cdm <- uploadCohortCodelistToCdm(
     cdm = cdm,
     cohortCodelist = cohortCodelist,
-    tableCohortCodelist = tableCohortCodelist
+    tableCohortCodelist = tableCohortCodelist,
+    table = table
   )
 
   if (!isFALSE(useIndexes)) {
@@ -120,7 +149,7 @@ conceptCohort <- function(cdm,
       dplyr::compute(name = subsetName, temporary = FALSE,
                      logPrefix = "CohortConstructor_conceptCohort_subsetCohort_")
     if (omopgenerics::isTableEmpty(subsetIndividuals)) {
-      omopgenerics::dropTable(cdm = cdm, name = subsetName)
+      omopgenerics::dropSourceTable(cdm = cdm, name = subsetName)
       cli::cli_warn("There are no individuals in the `subsetCohort` and `subsetCohortId` provided. Returning empty cohort.")
       cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
       cdm[[name]] <- cdm[[name]] |>
@@ -166,7 +195,7 @@ conceptCohort <- function(cdm,
     subsetIndividuals = subsetIndividuals
   )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tmpPref))
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tmpPref))
   cdm[[tableCohortCodelist]] <- NULL
 
   if (cdm[[name]] |>
@@ -208,7 +237,7 @@ conceptCohort <- function(cdm,
   }
 
   cli::cli_inform(c("i" = "Applying cohort requirements."))
-  cdm[[name]] <- fulfillCohortReqs(cdm = cdm, name = name)
+  cdm[[name]] <- fulfillCohortReqs(cdm = cdm, name = name, inObservation = inObservation, useIndexes = useIndexes)
 
   if(overlap == "merge"){
     cli::cli_inform(c("i" = "Merging overlapping records."))
@@ -225,7 +254,7 @@ conceptCohort <- function(cdm,
 
     # adding days might mean we no longer satisfy cohort requirements
     cli::cli_inform(c("i" = "Re-appplying cohort requirements."))
-    cdm[[name]] <- fulfillCohortReqs(cdm = cdm, name = name)
+    cdm[[name]] <- fulfillCohortReqs(cdm = cdm, name = name, inObservation = TRUE, useIndexes = useIndexes)
   }
 
   cdm[[name]] <- omopgenerics::newCohortTable(table = cdm[[name]])
@@ -329,48 +358,107 @@ unerafiedConceptCohort <- function(cdm,
     purrr::discard(is.null)
 
   if (length(cohorts) == 0) {
-    omopgenerics::dropTable(cdm, name = dplyr::starts_with(workingTblNames))
+    omopgenerics::dropSourceTable(cdm, name = dplyr::starts_with(workingTblNames))
     cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = name)
     return(cdm[[name]])
   }
 
   cli::cli_inform(c("i" = "Combining tables."))
   cohort <- Reduce(dplyr::union_all, cohorts) |>
-    dplyr::select(
+    dplyr::select(dplyr::any_of(c(
       "cohort_definition_id",
       "subject_id",
       "cohort_start_date",
-      "cohort_end_date"
-    ) |>
+      "cohort_end_date",
+      extraCols
+    ))) |>
     dplyr::mutate(cohort_end_date = dplyr::coalesce(.data$cohort_end_date, .data$cohort_start_date)) |>
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_conceptCohort_reduce_")
 
-  omopgenerics::dropTable(cdm, name = dplyr::starts_with(workingTblNames))
+  omopgenerics::dropSourceTable(cdm, name = dplyr::starts_with(workingTblNames))
 
   return(cohort)
 }
 
-fulfillCohortReqs <- function(cdm, name) {
-  # 1) if start is out of observation, drop cohort entry
-  # 2) if end is after observation end, set cohort end as observation end
-  cdm[[name]] |>
-    dplyr::filter(
-      !is.na(.data$cohort_start_date),
-      .data$cohort_start_date <= .data$cohort_end_date
-    ) |>
-    dplyr::compute(temporary = FALSE, name = name,
-                   logPrefix = "CohortConstructor_fulfillCohortReqs_filter_") |>
-    omopgenerics::recordCohortAttrition(reason = "Record start <= record end") |>
+fulfillCohortReqs <- function(cdm, name, inObservation, type = "start_end", useIndexes) {
+  # 1) inObservation == TRUE and start is out of observation, drop cohort entry.
+  #    inObservation == FALSE and start is out of observation move to observation start
+  # 2) inObservation == TRUE and end is after observation end, set cohort end as observation end,
+  #    inObservation == FALSE and end is after observation end set cohort end as observation start
+
+  # start by inner join with observation to use indexes
+  cdm[[name]] <- cdm[[name]] |>
     dplyr::left_join(
       cdm$observation_period |>
         dplyr::select(
           "person_id",
+          "observation_period_id",
           "observation_period_start_date",
           "observation_period_end_date"
         ),
       by = c("subject_id" = "person_id")
     ) |>
+    dplyr::compute(temporary = FALSE, name = name,
+                   logPrefix = "CohortConstructor_fulfillCohortReqs_observationJoin_")
+
+  if (type == "start_end") {
+    cdm[[name]] <- cdm[[name]] |>
+      dplyr::filter(
+        !is.na(.data$cohort_start_date),
+        .data$cohort_start_date <= .data$cohort_end_date
+      ) |>
+      dplyr::compute(temporary = FALSE, name = name,
+                     logPrefix = "CohortConstructor_fulfillCohortReqs_filterStartEnd_") |>
+      omopgenerics::recordCohortAttrition(reason = "Record start <= record end")
+  } else if (type == "start") {
+    cdm[[name]] <- cdm[[name]] |>
+      dplyr::filter(
+        !is.na(.data$cohort_start_date)
+      ) |>
+      dplyr::compute(temporary = FALSE, name = name,
+                     logPrefix = "CohortConstructor_fulfillCohortReqs_filterStart_") |>
+      omopgenerics::recordCohortAttrition(reason = "Not missing record date")
+  }
+
+  if (!inObservation) {
+    cdm[[name]] <- cdm[[name]] %>%
+      dplyr::mutate(
+        in_observation_start = .data$observation_period_start_date <= .data$cohort_start_date & .data$observation_period_end_date >= .data$cohort_start_date,
+        in_observation_end = .data$observation_period_start_date <= .data$cohort_end_date & .data$observation_period_end_date >= .data$cohort_end_date,
+        days_start_obs = !!CDMConnector::datediff("cohort_start_date", "observation_period_start_date"),
+        days_start_obs = dplyr::if_else(.data$days_start_obs < 0, NA, .data$days_start_obs)
+      ) |>
+      dplyr::group_by(.data$cohort_definition_id, .data$subject_id, .data$cohort_start_date, .data$cohort_end_date) |>
+      # which records to trim
+      dplyr::mutate(
+        trim_record =  all(!.data$in_observation_start) & min(.data$days_start_obs) == .data$days_start_obs & !is.na(.data$days_start_obs)
+      ) |>
+      dplyr::ungroup() |>
+      dplyr::mutate(
+        cohort_start_date = dplyr::if_else(
+          .data$trim_record == TRUE,
+          .data$observation_period_start_date,
+          .data$cohort_start_date
+        ),
+        cohort_end_date = dplyr::if_else(
+          .data$trim_record == TRUE & !.data$in_observation_end,
+          dplyr::if_else(
+            .data$cohort_end_date > .data$observation_period_end_date,
+            .data$observation_period_end_date,
+            .data$observation_period_start_date
+          ),
+          .data$cohort_end_date
+        )
+      ) |>
+      dplyr::select(!dplyr::any_of(c("in_observation_start", "in_observation_end", "days_start_obs", "trim_record"))) |>
+      dplyr::compute(
+        temporary = FALSE, name = name,
+        logPrefix = "CohortConstructor_fulfillCohortReqs_trimRecords_"
+      )
+  }
+
+  cdm[[name]] <- cdm[[name]] |>
     dplyr::filter(
       .data$cohort_start_date >= .data$observation_period_start_date,
       .data$cohort_start_date <= .data$observation_period_end_date
@@ -391,6 +479,34 @@ fulfillCohortReqs <- function(cdm, name) {
     dplyr::compute(temporary = FALSE, name = name,
                    logPrefix = "CohortConstructor_fulfillCohortReqs_inObservation_") |>
     omopgenerics::recordCohortAttrition(reason = "Record in observation")
+
+  # remove missing sex or date of birth
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = cdm[[name]],
+      cols = c("subject_id")
+    )
+  }
+  cdm[[name]] <- cdm[[name]] |>
+    dplyr::inner_join(
+      cdm$person |>
+        dplyr::select("subject_id" = "person_id", "gender_concept_id", "year_of_birth"),
+      by = "subject_id"
+    ) |>
+    dplyr::filter(!is.na(.data$gender_concept_id)) |>
+    dplyr::compute(temporary = FALSE, name = name,
+                   logPrefix = "CohortConstructor_fulfillCohortReqs_sex_") |>
+    omopgenerics::recordCohortAttrition(reason = "Non-missing sex") |>
+    dplyr::filter(!is.na(.data$year_of_birth)) |>
+    dplyr::select(
+      "cohort_definition_id",
+      "subject_id",
+      "cohort_start_date",
+      "cohort_end_date"
+    ) |>
+    dplyr::compute(temporary = FALSE, name = name,
+                   logPrefix = "CohortConstructor_fulfillCohortReqs_birth_year_") |>
+    omopgenerics::recordCohortAttrition(reason = "Non-missing year of birth")
 }
 
 
@@ -424,27 +540,46 @@ conceptSetToCohortCodelist <- function(conceptSet) {
 }
 
 # upload codes to cdm and add domain
-uploadCohortCodelistToCdm <- function(cdm, cohortCodelist, tableCohortCodelist) {
-  cdm <- omopgenerics::insertTable(
-    cdm = cdm,
-    name = tableCohortCodelist,
-    table = cohortCodelist |>
-      dplyr::select("cohort_definition_id", "concept_id")
-  )
-
-  cdm[[tableCohortCodelist]] <- cdm[[tableCohortCodelist]] |>
-    dplyr::left_join(cdm[["concept"]] |>
-                       dplyr::select("concept_id", "domain_id"), by = "concept_id") |>
-    dplyr::mutate(
-      "concept_id" = as.integer(.data$concept_id),
-      "domain_id" = tolower(.data$domain_id)
-    ) |>
-    dplyr::compute(
+uploadCohortCodelistToCdm <- function(cdm, cohortCodelist, tableCohortCodelist, table) {
+  if (is.null(table)) {
+    cdm <- omopgenerics::insertTable(
+      cdm = cdm,
       name = tableCohortCodelist,
-      temporary = FALSE,
-      overwrite = TRUE,
-      logPrefix = "CohortConstructor_uploadCohortCodelist_"
+      table = cohortCodelist |>
+        dplyr::select("cohort_definition_id", "concept_id")
     )
+
+    cdm[[tableCohortCodelist]] <- cdm[[tableCohortCodelist]] |>
+      dplyr::left_join(cdm[["concept"]] |>
+                         dplyr::select("concept_id", "domain_id"), by = "concept_id") |>
+      dplyr::mutate(
+        "concept_id" = as.integer(.data$concept_id),
+        "domain_id" = tolower(.data$domain_id)
+      ) |>
+      dplyr::compute(
+        name = tableCohortCodelist,
+        temporary = FALSE,
+        overwrite = TRUE,
+        logPrefix = "CohortConstructor_uploadCohortCodelist"
+      )
+  } else {
+    domains <- domainsData |>
+      dplyr::filter(.data$table %in% .env$table) |>
+      dplyr::select("domain_id")
+    cohortCodelist <- cohortCodelist |>
+      dplyr::select("cohort_definition_id", "concept_id") |>
+      dplyr::cross_join(domains) |>
+      dplyr::mutate(
+        "concept_id" = as.integer(.data$concept_id),
+        "domain_id" = tolower(.data$domain_id)
+      )
+
+    cdm <- omopgenerics::insertTable(
+      cdm = cdm,
+      name = tableCohortCodelist,
+      table = cohortCodelist
+    )
+  }
 
   cdm
 }
@@ -528,7 +663,7 @@ extendOverlap  <- function(cohort,
       dplyr::filter(
         .data$record_id != .data$record_id_overlap,
         .data$cohort_start_date <= .data$cohort_end_date_overlap &
-        .data$cohort_end_date >= .data$cohort_start_date_overlap
+          .data$cohort_end_date >= .data$cohort_start_date_overlap
       )  |>
       dplyr::select("cohort_definition_id", "subject_id",
                     "cohort_start_date", "cohort_end_date",
@@ -595,3 +730,4 @@ hasOverlap <- function(cohort){
   }
 
 }
+

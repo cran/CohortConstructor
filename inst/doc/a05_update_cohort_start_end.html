@@ -39,6 +39,107 @@ ul.task-list{list-style: none;}
 
 
 
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -239,7 +340,331 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Accurately defining cohort entry and exit dates is crucial in
+observational research to ensure the validity of study findings. The
+<code>CohortConstructor</code> package provides several functions to
+adjust these dates based on specific criteria, and this vignette
+demonstrates how to use them.</p>
+<p>Functions to update cohort dates can be categorized into four
+groups:</p>
+<ul>
+<li><p><strong>Exit at Specific Date Functions:</strong> Adjust the
+cohort end date to predefined events (observation end and death
+date).</p></li>
+<li><p><strong>Cohort Entry or Exit Based on Other Date
+Columns:</strong> Modify cohort start or end dates to the earliest or
+latests from a set of date columns.</p></li>
+<li><p><strong>Trim Dates Functions:</strong> Restrict cohort entries
+based on demographic criteria or specific date ranges.</p></li>
+<li><p><strong>Pad Dates Functions:</strong> Adjust cohort start or end
+dates by adding or subtracting a specified number of days.</p></li>
+</ul>
+<p>We’ll explore each category in the following sections.</p>
+<p>First, we’ll connect to the Eunomia synthetic data and create a mock
+cohort of women in the database to use as example in the vignette.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CohortCharacteristics)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(PatientProfiles)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(CDMConnector)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">Sys.getenv</span>(<span class="st">&quot;EUNOMIA_DATA_FOLDER&quot;</span>) <span class="sc">==</span> <span class="st">&quot;&quot;</span>){</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">Sys.setenv</span>(<span class="st">&quot;EUNOMIA_DATA_FOLDER&quot;</span> <span class="ot">=</span> <span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;eunomia&quot;</span>))}</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(<span class="fu">Sys.getenv</span>(<span class="st">&quot;EUNOMIA_DATA_FOLDER&quot;</span>))){ <span class="fu">dir.create</span>(<span class="fu">Sys.getenv</span>(<span class="st">&quot;EUNOMIA_DATA_FOLDER&quot;</span>))</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">downloadEunomiaData</span>()  </span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>}</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), <span class="at">dbdir =</span> CDMConnector<span class="sc">::</span><span class="fu">eunomiaDir</span>())</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> CDMConnector<span class="sc">::</span><span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>                    <span class="at">writeSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writePrefix =</span> <span class="st">&quot;my_study_&quot;</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>cdm<span class="sc">$</span>cohort <span class="ot">&lt;-</span> <span class="fu">demographicsCohort</span>(<span class="at">cdm =</span> cdm, <span class="at">name =</span> <span class="st">&quot;cohort&quot;</span>, <span class="at">sex =</span> <span class="st">&quot;Female&quot;</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; ℹ Building new trimmed cohort</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; Adding demographics information</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; Creating initial cohort</span></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; Trim sex</span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; ✔ Cohort trimmed</span></span></code></pre></div>
+</div>
+<div id="exit-at-specific-date" class="section level2">
+<h2>Exit at Specific Date</h2>
+<div id="exitatobservationend" class="section level3">
+<h3><code>exitAtObservationEnd()</code></h3>
+<p>The <code>exitAtObservationEnd()</code> function updates the cohort
+end date to the end of the observation period for each subject. This
+ensures that the cohort exit does not extend beyond the period during
+which data is available for the subject.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_observation_end <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> </span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="fu">exitAtObservationEnd</span>(<span class="at">name =</span> <span class="st">&quot;cohort_observation_end&quot;</span>)</span></code></pre></div>
+<p>As cohort entries cannot overlap, updating the end date to the
+observation end may result in overlapping records. In such cases,
+overlapping records are collapsed into a single entry (starting at the
+earliest entry and ending at the end of observation).</p>
+<p>This function has an argument <code>limitToCurrentPeriod</code> to
+consider cases when a subject may have more than one observation period.
+If <code>limitToCurrentPeriod = TRUE</code> (default) end date will be
+set to the end of the observation period where the record is registered.
+If <code>limitToCurrentPeriod = FALSE</code>, in addition to updating
+the cohort end to the allocated observation end, cohort entries are
+created for each of the subsequent observation periods.</p>
+</div>
+<div id="exitatdeath" class="section level3">
+<h3><code>exitAtDeath()</code></h3>
+<p>The <code>exitAtDeath()</code> function sets the cohort end date to
+the recorded death date of the subject.</p>
+<p>By default, it keeps the end date of subjects who do not have a death
+record unmodified; however, these can be dropped with the argument
+<code>requireDeath.</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_death <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> </span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">exitAtDeath</span>(<span class="at">requireDeath =</span> <span class="cn">TRUE</span>, <span class="at">name =</span> <span class="st">&quot;cohort_death&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="cohort-entry-or-exit-based-on-other-date-columns" class="section level2">
+<h2>Cohort Entry or Exit Based on Other Date Columns</h2>
+<div id="entryatfirstdate" class="section level3">
+<h3><code>entryAtFirstDate()</code></h3>
+<p>The <code>entryAtFirstDate()</code> function updates the cohort start
+date to the earliest date among specified columns.</p>
+<p>Next we want to set the entry date to the first of: diclofenac or
+acetaminophen prescriptions after cohort start, or cohort end date.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># create cohort with of drugs diclofenac and acetaminophen </span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">cdm =</span> cdm, <span class="at">name =</span> <span class="st">&quot;medications&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">&quot;diclofenac&quot;</span> <span class="ot">=</span> <span class="dv">1124300</span>, <span class="st">&quot;acetaminophen&quot;</span> <span class="ot">=</span> <span class="dv">1127433</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Warning: ! `codelist` casted to integers.</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; ℹ Subsetting table drug_exposure using 2 concepts with domain: drug.</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; ℹ Combining tables.</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; ℹ Creating cohort attributes.</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; ℹ Applying cohort requirements.</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; ℹ Merging overlapping records.</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; ✔ Cohort medications created.</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co"># add date first ocurrence of these drugs from index date</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_dates <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> </span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="fu">addCohortIntersectDate</span>(</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>    <span class="at">targetCohortTable =</span> <span class="st">&quot;medications&quot;</span>, </span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>    <span class="at">nameStyle =</span> <span class="st">&quot;{cohort_name}&quot;</span>,</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">&quot;cohort_dates&quot;</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>    ) </span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co"># set cohort start at the first ocurrence of one of the drugs, or the end date</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_first <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort_dates <span class="sc">|&gt;</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>  <span class="fu">entryAtFirstDate</span>(</span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>    <span class="at">dateColumns =</span> <span class="fu">c</span>(<span class="st">&quot;diclofenac&quot;</span>, <span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;cohort_end_date&quot;</span>), </span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">&quot;cohort_entry_first&quot;</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>  )</span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; Joining with `by = join_by(cohort_definition_id, subject_id, cohort_end_date)`</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_first </span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_entry_first&gt; [?? x 7]</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;  1                    1        152 1976-09-10        2018-10-29     </span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;  2                    1        177 2000-05-31        2019-05-13     </span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;  3                    1        374 1986-04-06        2017-05-25     </span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;  4                    1        390 1989-10-20        2019-06-05     </span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt;  5                    1        422 1976-12-08        2019-04-28     </span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt;  6                    1        431 1964-11-03        2018-09-28     </span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;  7                    1        525 1994-09-07        2018-07-23     </span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt;  8                    1        689 2010-03-27        2019-04-21     </span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;  9                    1        670 1977-09-15        2018-09-13     </span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 10                    1        730 1962-09-16        2018-12-16     </span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: entry_reason &lt;chr&gt;, diclofenac &lt;date&gt;,</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; #   acetaminophen &lt;date&gt;</span></span></code></pre></div>
+</div>
+<div id="entryatlastdate" class="section level3">
+<h3><code>entryAtLastDate()</code></h3>
+<p>The <code>entryAtLastDate()</code> function works similarly to
+<code>entryAtFirstDate()</code>, however now the selected column is the
+latest date among specified columns.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_last <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort_dates <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">entryAtLastDate</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="at">dateColumns =</span> <span class="fu">c</span>(<span class="st">&quot;diclofenac&quot;</span>, <span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;cohort_end_date&quot;</span>), </span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">keepDateColumns =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">&quot;cohort_entry_last&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  )</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_last</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_entry_last&gt; [?? x 5]</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;  1                    1        409 2019-01-18        2019-01-18     </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       2876 2018-11-09        2018-11-09     </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       4359 2019-03-07        2019-03-07     </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       4480 2018-10-09        2018-10-09     </span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       4649 2019-06-03        2019-06-03     </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       1478 2019-06-04        2019-06-04     </span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       3025 2002-10-21        2002-10-21     </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       3759 2018-08-12        2018-08-12     </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       3929 2006-01-23        2006-01-23     </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       2771 2018-09-07        2018-09-07     </span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; # ℹ 1 more variable: entry_reason &lt;chr&gt;</span></span></code></pre></div>
+<p>In this example, we set <code>keepDateColumns</code> to FALSE, which
+drops columns in <code>dateColumns</code>.</p>
+</div>
+<div id="exitatfirstdate" class="section level3">
+<h3><code>exitAtFirstDate()</code></h3>
+<p>The <code>exitAtFirstDate()</code> function updates the cohort end
+date to the earliest date among specified columns.</p>
+<p>For instance, next we want the exit to be observation end, except if
+there is a record of diclofenac or acetaminophen, in which case that
+would be the end:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_first <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort_dates <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">addFutureObservation</span>(<span class="at">futureObservationType =</span> <span class="st">&quot;date&quot;</span>, <span class="at">name =</span> <span class="st">&quot;cohort_exit_first&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">exitAtFirstDate</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">dateColumns =</span> <span class="fu">c</span>(<span class="st">&quot;future_observation&quot;</span>, <span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;diclofenac&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">keepDateColumns =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  )</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_first </span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_exit_first&gt; [?? x 5]</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date exit_reason</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;          &lt;chr&gt;      </span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  1                    1       2909 1945-02-26        1952-03-21      acetaminop…</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       5199 1962-01-16        1963-10-09      acetaminop…</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       3533 1961-11-30        1994-10-09      acetaminop…</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       1478 1961-03-21        1975-09-05      acetaminop…</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       3759 1964-08-09        1982-08-05      acetaminop…</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       4261 1922-03-12        1929-09-02      acetaminop…</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       4738 1909-09-17        1922-12-17      acetaminop…</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       1229 1954-05-15        1957-07-29      acetaminop…</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       1791 1954-11-25        1963-05-14      acetaminop…</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       2135 1948-02-02        1953-02-06      acetaminop…</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span></code></pre></div>
+</div>
+<div id="exitatlastdate" class="section level3">
+<h3><code>exitAtLastDate()</code></h3>
+<p>Similarly, the <code>exitAtLastDate()</code> function sets the cohort
+end date to the latest date among specified columns.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_last <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort_dates <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">exitAtLastDate</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>    <span class="at">dateColumns =</span> <span class="fu">c</span>(<span class="st">&quot;cohort_end_date&quot;</span>, <span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;diclofenac&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">returnReason =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">keepDateColumns =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">&quot;cohort_exit_last&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  )</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_last</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_exit_last&gt; [?? x 4]</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  1                    1        144 1974-12-20        2019-01-04     </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       1016 1967-06-14        2019-06-26     </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       1115 1948-07-05        2018-12-10     </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       5279 1946-01-27        2019-06-09     </span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       2997 1981-10-04        2018-12-16     </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       3857 1944-01-05        2018-08-01     </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       4641 1967-07-13        2018-07-19     </span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       5335 1958-08-22        2019-03-18     </span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       1407 1967-11-11        2018-11-17     </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; 10                    1        212 1970-03-21        2019-05-11     </span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span></code></pre></div>
+<p>In this last example, the return cohort doesn’t have the specified
+date columns, neither the “reason” column indicating which date was used
+for entry/exit. These was set with the <code>keepDateColumns</code> and
+<code>returnReason</code> arguments, common throughout the functions in
+this category.</p>
+</div>
+</div>
+<div id="trim-dates-functions" class="section level2">
+<h2>Trim Dates Functions</h2>
+<div id="trimdemographics" class="section level3">
+<h3><code>trimDemographics()</code></h3>
+<p>The <code>trimDemographics()</code> function restricts the cohort
+based on patient demographics. This means that cohort start and end
+dates are moved (within the original cohort entry dates) to ensure that
+individuals meet specific demographic criteria throughout their cohort
+participation. If individuals do not satisfy the criteria at any point
+during their cohort period, their records are excluded.</p>
+<p>For instance, if we trim using an age range from 18 to 65,
+individuals will only contribute in the cohort form the day they are 18
+or older, up to the day before turning 66 (or before if they leave the
+database).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_trim <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">trimDemographics</span>(<span class="at">ageRange =</span> <span class="fu">c</span>(<span class="dv">18</span>, <span class="dv">65</span>), <span class="at">name =</span> <span class="st">&quot;cohort_trim&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; ℹ Building new trimmed cohort</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; Adding demographics information</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; Creating initial cohort</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Trim age</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; ✔ Cohort trimmed</span></span></code></pre></div>
+</div>
+<div id="trimtodaterange" class="section level3">
+<h3><code>trimToDateRange()</code></h3>
+<p>The <code>trimToDateRange()</code> function confines cohort entry and
+exit dates within a specified date range, ensuring that cohort periods
+align with the defined timeframe. If only the start or end of a range is
+required, the other can be set to <code>NA</code>.</p>
+<p>For example, to restrict cohort dates to be on or after January 1st,
+2015:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Trim cohort dates to be within the year 2000</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_trim <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort_trim <span class="sc">|&gt;</span> </span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">trimToDateRange</span>(<span class="at">dateRange =</span> <span class="fu">as.Date</span>(<span class="fu">c</span>(<span class="st">&quot;2015-01-01&quot;</span>, <span class="cn">NA</span>)))</span></code></pre></div>
+</div>
+</div>
+<div id="pad-dates-functions" class="section level2">
+<h2>Pad Dates Functions</h2>
+<div id="padcohortstart" class="section level3">
+<h3><code>padCohortStart()</code></h3>
+<p>The <code>padCohortStart()</code> function adds (or subtracts) a
+specified number of days to the cohort start date.</p>
+<p>For example, to subtract 50 days from the cohort start date:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Substract 50 days to cohort start</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>cdm<span class="sc">$</span>cohort <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> <span class="fu">padCohortStart</span>(<span class="at">days =</span> <span class="sc">-</span><span class="dv">50</span>, <span class="at">collapse =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>When subtracting days, it may result in cohort start dates preceding
+the observation period start. By default, such entries are corrected to
+the observation period start. To drop these entries instead, set the
+<code>padObservation</code> argument to FALSE.</p>
+<p>Additionally, adjusting cohort start dates may lead to overlapping
+entries for the same subject. The <code>collapse</code> argument manages
+this: if TRUE, merges overlapping entries into a single record with the
+earliest start and latest end date (default), if FALSE retains only the
+first of the overlapping entries.</p>
+</div>
+<div id="padcohortend" class="section level3">
+<h3><code>padCohortEnd()</code></h3>
+<p>Similarly, the <code>padCohortEnd()</code> function adjusts the
+cohort end date by adding (or subtracting) a specified number of
+days.</p>
+<p>The example below adds 1000 days to cohort end date, while dropping
+records that are outside of observation after adding days.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_pad <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="fu">padCohortEnd</span>(<span class="at">days =</span> <span class="dv">1000</span>, <span class="at">padObservation =</span> <span class="cn">FALSE</span>, <span class="at">name =</span> <span class="st">&quot;cohort_pad&quot;</span>)</span></code></pre></div>
+<p>Additionally, days to add can also be specified with a numeric column
+in the cohort, which allows to add a specific number of days for each
+record:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">%&gt;%</span> </span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">days_to_add =</span> <span class="sc">!!</span>CDMConnector<span class="sc">::</span><span class="fu">datediff</span>(<span class="st">&quot;cohort_start_date&quot;</span>, <span class="st">&quot;cohort_end_date&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="fu">padCohortEnd</span>(<span class="at">days =</span> <span class="st">&quot;days_to_add&quot;</span>, <span class="at">padObservation =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+<div id="padcohortdate" class="section level3">
+<h3><code>padCohortDate()</code></h3>
+<p>The <code>padCohortDate()</code> function provides a more flexible
+approach by allowing adjustments to either the cohort start or end date
+based on specified parameters. You can define which date to adjust
+(<code>cohortDate</code>), the reference date for the adjustment
+(<code>indexDate</code>), and the number of days to add or subtract.</p>
+<p>For example, to set the cohort end date to be 365 days after the
+cohort start date:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>cdm<span class="sc">$</span>cohort <span class="ot">&lt;-</span> cdm<span class="sc">$</span>cohort <span class="sc">|&gt;</span> </span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="fu">padCohortDate</span>(<span class="at">days =</span> <span class="dv">365</span>, <span class="at">cohortDate =</span> <span class="st">&quot;cohort_end_date&quot;</span>, <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="cohort-id-argument" class="section level2">
+<h2>Cohort ID argument</h2>
+<p>For all these functions, the cohortId argument specifies which
+cohorts to modify. This allows for targeted adjustments without altering
+other cohorts. For instance, to add 10 days to the end date of the
+acetaminophen cohort and 20 days to the diclofenac cohort we can do the
+following:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span> </span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="fu">padCohortDate</span>(<span class="at">days =</span> <span class="dv">10</span>, <span class="at">cohortId =</span> <span class="st">&quot;acetaminophen&quot;</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="fu">padCohortDate</span>(<span class="at">days =</span> <span class="dv">20</span>, <span class="at">cohortId =</span> <span class="st">&quot;diclofenac&quot;</span>)</span></code></pre></div>
+</div>
 
 
 

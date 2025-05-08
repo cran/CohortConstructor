@@ -1,11 +1,12 @@
-#' Restrict cohort on patient demographics
+#' Trim cohort on patient demographics
 #'
 #' @description
 #' `trimDemographics()` resets the cohort start and end date based on the
 #' specified demographic criteria is satisfied.
 #'
 #' @inheritParams requireDemographics
-#' @inheritParams cohortIdSubsetDoc
+#' @inheritParams cohortIdModifyDoc
+#' @inheritParams softValidationDoc
 #'
 #' @return The cohort table with only records for individuals satisfying the
 #' demographic requirements
@@ -26,7 +27,8 @@ trimDemographics <- function(cohort,
                              sex = NULL,
                              minPriorObservation = NULL,
                              minFutureObservation = NULL,
-                             name = tableName(cohort)) {
+                             name = tableName(cohort),
+                             .softValidation = TRUE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
@@ -37,8 +39,10 @@ trimDemographics <- function(cohort,
     sex = sex,
     minPriorObservation = minPriorObservation,
     minFutureObservation = minFutureObservation,
-    null = TRUE
+    null = TRUE,
+    length = NULL
   )
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning empty cohort as `cohortId` is not valid.")
@@ -65,7 +69,7 @@ trimDemographics <- function(cohort,
     ) |>
     dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                    logPrefix = "CohortConstructor_trimDemographics_trimmed_") |>
-    omopgenerics::newCohortTable(.softValidation = TRUE)
+    omopgenerics::newCohortTable(.softValidation = .softValidation)
 
   if (!is.null(ageRange) ||
       !is.null(minPriorObservation) ||
@@ -337,7 +341,7 @@ trimDemographics <- function(cohort,
       .softValidation = FALSE
     )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {

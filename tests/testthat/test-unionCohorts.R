@@ -68,7 +68,12 @@ test_that("unionCohorts works", {
 
   cdm$cohort5 <- cdm$cohort5 |> unionCohorts(name = "cohort5")
 
+  # TEST same name and keep cohorts
+  cdm$cohort1 <- cdm$cohort1 |>
+    CohortConstructor::unionCohorts(name = "cohort1", keepOriginalCohorts = TRUE)
+  expect_true(all(settings(cdm$cohort1)$cohort_name %in% c("cohort_1", "cohort_2", "cohort_3", "cohort_4", "cohort_1_cohort_2_cohort_3_cohort_4")))
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -146,6 +151,7 @@ test_that("gap and name works", {
                     )))
   expect_true(settings(cdm$cohort)$cohort_name == "test")
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -199,6 +205,7 @@ test_that("Expected behaviour", {
                            name = "cohort1")
   )
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -276,6 +283,7 @@ test_that("test codelist", {
   expect_true(all(codes |> dplyr::pull("type") |> sort() == rep("index event", 3)))
   expect_true(all(codes |> dplyr::pull("cohort_definition_id") |> sort() == c(1, 1, 1)))
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -300,6 +308,7 @@ test_that("keep original cohorts", {
                               keepOriginalCohorts = TRUE)
   expect_true(nrow(settings(cdm$cohort3)) == nrow(start_settings) + 1)
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -339,6 +348,7 @@ test_that("multiple observation periods", {
       "cohort_end_date" = as.Date(c("2000-12-20", "2001-04-01", "2004-01-01", "2001-12-30", "2003-01-01"))
     ))
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
   PatientProfiles::mockDisconnect(cdm)
 })
 
@@ -374,6 +384,7 @@ test_that("test indexes - postgres", {
       "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
   )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
   CDMConnector::cdmDisconnect(cdm = cdm)
 })

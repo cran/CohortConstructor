@@ -9,6 +9,7 @@
 #' @inheritParams padObservationDoc
 #' @param cohortDate 'cohort_start_date' or 'cohort_end_date'.
 #' @param indexDate Variable in cohort that contains the index date to add.
+#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
 #' @export
@@ -30,7 +31,8 @@ padCohortDate <- function(cohort,
                           collapse = TRUE,
                           padObservation = TRUE,
                           cohortId = NULL,
-                          name = tableName(cohort)) {
+                          name = tableName(cohort),
+                          .softValidation = FALSE) {
   cohort |>
     .padCohortDate(
       cohortDate = cohortDate,
@@ -39,7 +41,8 @@ padCohortDate <- function(cohort,
       collapse = collapse,
       padObservation = padObservation,
       cohortId = cohortId,
-      name = name
+      name = name,
+      .softValidation = .softValidation
     )
 }
 
@@ -62,6 +65,7 @@ padCohortDate <- function(cohort,
 #' @inheritParams collapseDoc
 #' @inheritParams daysDoc
 #' @inheritParams padObservationDoc
+#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
 #' @export
@@ -79,7 +83,8 @@ padCohortEnd <- function(cohort,
                          collapse = TRUE,
                          padObservation = TRUE,
                          cohortId = NULL,
-                         name = tableName(cohort)) {
+                         name = tableName(cohort),
+                         .softValidation = FALSE) {
   cohort |>
     .padCohortDate(
       cohortDate = "cohort_end_date",
@@ -88,7 +93,8 @@ padCohortEnd <- function(cohort,
       collapse = collapse,
       padObservation = padObservation,
       cohortId = cohortId,
-      name = name
+      name = name,
+      .softValidation = .softValidation
     )
 }
 
@@ -108,6 +114,7 @@ padCohortEnd <- function(cohort,
 #' @inheritParams collapseDoc
 #' @inheritParams daysDoc
 #' @inheritParams padObservationDoc
+#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
 #' @export
@@ -125,7 +132,8 @@ padCohortStart <- function(cohort,
                            collapse = TRUE,
                            padObservation = TRUE,
                            cohortId = NULL,
-                           name = tableName(cohort)) {
+                           name = tableName(cohort),
+                           .softValidation = FALSE) {
   cohort |>
     .padCohortDate(
       cohortDate = "cohort_start_date",
@@ -134,7 +142,8 @@ padCohortStart <- function(cohort,
       collapse = collapse,
       padObservation = padObservation,
       cohortId = cohortId,
-      name = name
+      name = name,
+      .softValidation = .softValidation
     )
 }
 
@@ -146,7 +155,8 @@ padCohortStart <- function(cohort,
                            padObservation,
                            cohortId,
                            name,
-                           call = parent.frame()) {
+                           call = parent.frame(),
+                           .softValidation) {
   # validate input
   cohort <- omopgenerics::validateCohortArgument(cohort = cohort, call = call)
   cohortDate |>
@@ -158,6 +168,8 @@ padCohortStart <- function(cohort,
   omopgenerics::assertLogical(collapse, length = 1)
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
+  cdm <- omopgenerics::cdmReference(cohort)
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -172,7 +184,7 @@ padCohortStart <- function(cohort,
   if (is.numeric(days)) {
     omopgenerics::assertNumeric(days, integerish = TRUE, length = 1, msg = msg, call = call)
     reason <- paste0(reason, round(days), " ", ifelse(days == 1, "day", "days"))
-    q <- "as.Date(local(CDMConnector::dateadd(indexDate, {round(days)}L)))"
+    q <- "as.Date(local(CDMConnector::dateadd('{indexDate}', {round(days)}L)))"
 
   } else if (is.character(days)) {
     omopgenerics::assertCharacter(days, length = 1, call = call, msg = msg)
@@ -180,14 +192,17 @@ padCohortStart <- function(cohort,
     reason <- paste0(reason, "'", days, "' days")
     cohort <- cohort |>
       dplyr::mutate(!!days := as.integer(.data[[days]]))
-    q <- "as.Date(local(CDMConnector::dateadd(indexDate, '{days}')))"
+    q <- "as.Date(local(CDMConnector::dateadd('{indexDate}', '{days}')))"
   } else {
     cli::cli_abort(message = msg, call = call)
   }
 
-  intermediate <- omopgenerics::uniqueTableName()
-  subCohort <- cohort |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId)
+  # temp tables
+  tablePrefix <- omopgenerics::tmpPrefix()
+  tmpNewCohort <- omopgenerics::uniqueTableName(tablePrefix)
+  tmpUnchanged <- omopgenerics::uniqueTableName(tablePrefix)
+  cdm <- filterCohortInternal(cdm, cohort, cohortId, tmpNewCohort, tmpUnchanged)
+  newCohort <- cdm[[tmpNewCohort]]
 
   # pad days
   q <- q |>
@@ -195,43 +210,54 @@ padCohortStart <- function(cohort,
     as.character() |>
     rlang::parse_exprs() |>
     rlang::set_names(cohortDate)
-  subCohort <- subCohort |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) %>%
+  newCohort <- newCohort %>%
     dplyr::mutate(!!!q) |>
     # drop start > end
     dplyr::filter(
       .data$cohort_start_date <= .data$cohort_end_date &
         !is.na(.data[[cohortDate]])
     ) |>
-    dplyr::compute(name = intermediate, temporary = FALSE,
+    dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                    logPrefix = "CohortConstructor_.padCohortDate_intermediate_")
 
   # solve observation
-  subCohort <- subCohort |>
-    solveObservation(padObservation, intermediate, cohortDate)
+  newCohort <- newCohort |>
+    solveObservation(padObservation, tmpNewCohort, cohortDate)
 
   # solve overlap
-  subCohort <- subCohort |>
-    solveOverlap(collapse, intermediate)
+  newCohort <- newCohort |>
+    solveOverlap(collapse, tmpNewCohort)
 
   # recreate the cohort
-  cohort <- cohort |>
-    dplyr::filter(!.data$cohort_definition_id %in% .env$cohortId) |>
-    dplyr::select(
-      "cohort_definition_id", "subject_id", "cohort_start_date",
-      "cohort_end_date"
-    ) |>
-    dplyr::union_all(subCohort) |>
+  if (isTRUE(needsIdFilter(cohort, cohortId))) {
+    newCohort <- newCohort |>
+      # join non modified cohorts
+      dplyr::union_all(
+        cdm[[tmpUnchanged]] |>
+          dplyr::select(dplyr::all_of(omopgenerics::cohortColumns("cohort")))
+      ) |>
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
+                     logPrefix = "CohortConstructor_.padCohortDate_union_")
+  }
+
+  newCohort <- newCohort |>
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_.padCohortDate_recreate_") |>
-    omopgenerics::newCohortTable(.softValidation = FALSE) |>
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
     omopgenerics::recordCohortAttrition(cohortId = cohortId, reason = reason)
 
   # drop temp table
-  cdm <- omopgenerics::cdmReference(cohort)
-  omopgenerics::dropTable(cdm = cdm, name = intermediate)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
-  return(cohort)
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
+
+  return(newCohort)
 }
 
 validateColumn <- function(col, x, call) {
@@ -263,7 +289,7 @@ solveOverlap <- function(x, collapse, intermediate) {
         xId |>
           dplyr::select(
             "cohort_definition_id", "subject_id",
-            "prior_end_date" = "cohort_end_date"
+            "prior_end_date" = "cohort_end_date", "id"
           ) |>
           dplyr::mutate(id = .data$id + 1L),
         by = c("cohort_definition_id", "subject_id", "id")
@@ -276,7 +302,7 @@ solveOverlap <- function(x, collapse, intermediate) {
       dplyr::compute(name = intermediate, temporary = FALSE,
                      logPrefix = "CohortConstructor_solveOverlap_final_")
     cdm <- omopgenerics::cdmReference(x)
-    omopgenerics::dropTable(cdm = cdm, name = uniqueName)
+    omopgenerics::dropSourceTable(cdm = cdm, name = uniqueName)
   }
   return(x)
 }

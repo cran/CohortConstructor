@@ -48,6 +48,30 @@ plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
 cdm$acetaminophen <- conceptCohort(cdm = cdm, 
+                                   conceptSet = acetaminophen_codes, 
+                                   exit = "event_end_date",
+                                   name = "acetaminophen")
+cdm$acetaminophen <- cdm$acetaminophen |> 
+  requireIsLastEntry()
+
+summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
+plotCohortAttrition(summary_attrition)
+
+
+## -----------------------------------------------------------------------------
+cdm$acetaminophen <- conceptCohort(cdm = cdm, 
+                                   conceptSet = acetaminophen_codes, 
+                                   exit = "event_end_date",
+                                   name = "acetaminophen")
+cdm$acetaminophen <- cdm$acetaminophen |> 
+  requireIsEntry(entryRange = c(1,2))
+
+summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
+plotCohortAttrition(summary_attrition)
+
+
+## -----------------------------------------------------------------------------
+cdm$acetaminophen <- conceptCohort(cdm = cdm, 
                                  conceptSet = acetaminophen_codes, 
                                  name = "acetaminophen")
 

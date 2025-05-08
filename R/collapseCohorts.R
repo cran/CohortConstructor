@@ -8,6 +8,7 @@
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams gapDoc
 #' @inheritParams nameDoc
+#' @inheritParams softValidationDoc
 #'
 #' @export
 #'
@@ -16,7 +17,8 @@
 collapseCohorts <- function(cohort,
                             cohortId = NULL,
                             gap = 0,
-                            name = tableName(cohort)) {
+                            name = tableName(cohort),
+                            .softValidation = FALSE) {
   # input validation
   cohort <- omopgenerics::validateCohortArgument(cohort, dropExtraColumns = TRUE)
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
@@ -24,6 +26,7 @@ collapseCohorts <- function(cohort,
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   omopgenerics::assertNumeric(gap, integerish = TRUE, min = 0, length = 1)
   ids <- settings(cohort)$cohort_definition_id
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -34,23 +37,11 @@ collapseCohorts <- function(cohort,
 
   # temp tables
   tablePrefix <- omopgenerics::tmpPrefix()
-  tmpNewCohort <- paste0(omopgenerics::uniqueTableName(tablePrefix), "_1")
-  if (all(ids %in% cohortId)) {
-    newCohort <- cohort |>
-      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
-                     logPrefix = "CohortConstructor_collapseCohorts_newCohort1_") |>
-      omopgenerics::newCohortTable(.softValidation = TRUE)
-  } else {
-    tmpUnchanged <- paste0(omopgenerics::uniqueTableName(tablePrefix), "_2")
-    unchangedCohort <- cohort |>
-      dplyr::filter(!.data$cohort_definition_id %in% .env$cohortId) |>
-      dplyr::compute(name = tmpUnchanged, temporary = FALSE,
-                     logPrefix = "CohortConstructor_collapseCohorts_unchangedCohort_")
-    newCohort <- cohort |>
-      dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
-      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
-                     logPrefix = "CohortConstructor_collapseCohorts_newCohort2_")
-  }
+  tmpNewCohort <- omopgenerics::uniqueTableName(tablePrefix)
+  tmpUnchanged <- omopgenerics::uniqueTableName(tablePrefix)
+  cdm <- filterCohortInternal(cdm, cohort, cohortId, tmpNewCohort, tmpUnchanged)
+  newCohort <- cdm[[tmpNewCohort]]
+
   if (gap == Inf) {
     newCohort <- newCohort |>
       PatientProfiles::addObservationPeriodId(name = tmpNewCohort) |>
@@ -74,23 +65,22 @@ collapseCohorts <- function(cohort,
       ) |>
       dplyr::select(!"observation_period_id")
   }
-  if (!all(ids %in% cohortId)) {
-    newCohort <- unchangedCohort |>
-      dplyr::union_all(newCohort)|>
-      dplyr::compute(name = name, temporary = FALSE,
-                     logPrefix = "CohortConstructor_collapseCohorts_union_")
-  } else {
-    newCohort <- newCohort |>
-      dplyr::compute(name = name, temporary = FALSE,
-                     logPrefix = "CohortConstructor_collapseCohorts_all_id_")
+
+  if (isTRUE(needsIdFilter(cohort = cohort, cohortId = cohortId))) {
+    newCohort <- cdm[[tmpUnchanged]] |>
+      dplyr::select(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
+      dplyr::union_all(newCohort)
   }
+
   newCohort <- newCohort |>
-    omopgenerics::newCohortTable(.softValidation = FALSE) |>
+    dplyr::compute(name = name, temporary = FALSE,
+                   logPrefix = "CohortConstructor_collapseCohorts_name_") |>
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
     omopgenerics::recordCohortAttrition(
       reason = "Collapse cohort with a gap of {gap} days.",
       cohortId = cohortId)
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {
@@ -102,5 +92,3 @@ collapseCohorts <- function(cohort,
 
   return(newCohort)
 }
-
-

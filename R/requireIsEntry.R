@@ -8,6 +8,7 @@
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
 #' @param entryRange Range for entries to include.
+#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -22,18 +23,23 @@
 requireIsEntry <- function(cohort,
                            entryRange,
                            cohortId = NULL,
-                           name = tableName(cohort)) {
+                           name = tableName(cohort),
+                           .softValidation = TRUE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
     # return entry cohort as cohortId is used to modify not subset
-    cdm[[name]] <- cohort |> dplyr::compute(name = name, temporary = FALSE,
-                                            logPrefix = "CohortConstructor_requireIsEntry_entry_")
+    cdm[[name]] <- cohort |>
+      dplyr::compute(
+        name = name, temporary = FALSE,
+        logPrefix = "CohortConstructor_requireIsEntry_entry_"
+      )
     return(cdm[[name]])
   }
 
@@ -54,7 +60,7 @@ requireIsEntry <- function(cohort,
     cohort <- cohort |>
       dplyr::compute(name = name, temporary = FALSE,
                      logPrefix = "CohortConstructor_requireIsEntry_restrict_") |>
-      omopgenerics::newCohortTable(.softValidation = TRUE) |>
+      omopgenerics::newCohortTable(.softValidation = .softValidation) |>
       omopgenerics::recordCohortAttrition(
         "Restricted to entries between {minEntry} and {maxEntry}",
         cohortId = cohortId
@@ -74,12 +80,24 @@ requireIsEntry <- function(cohort,
     dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
     dplyr::mutate(entry = dplyr::row_number())
 
-  if (maxEntry == Inf) {
-    cohort <- cohort  |>
-      dplyr::filter(.data$entry >= {{minEntry}})
+  if(isFALSE(needsIdFilter(cohort = cohort, cohortId = cohortId))){
+    if (maxEntry == Inf) {
+      cohort <- cohort  |>
+        dplyr::filter(.data$entry >= {{minEntry}})
+    } else {
+      cohort <- cohort |>
+        dplyr::filter(.data$entry >= {{minEntry}}, .data$entry <= {{maxEntry}})
+    }
   } else {
-    cohort <- cohort |>
-      dplyr::filter(.data$entry >= {{minEntry}}, .data$entry <= {{maxEntry}})
+    if (maxEntry == Inf) {
+      cohort <- cohort  |>
+        dplyr::filter(.data$entry >= {{minEntry}} |
+                        (!.data$cohort_definition_id %in% .env$cohortId))
+    } else {
+      cohort <- cohort |>
+        dplyr::filter(.data$entry >= {{minEntry}}, .data$entry <= {{maxEntry}} |
+                        (!.data$cohort_definition_id %in% .env$cohortId))
+    }
   }
 
   cohort <- cohort |>
@@ -87,9 +105,11 @@ requireIsEntry <- function(cohort,
     dplyr::select(!"entry") |>
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_requireIsEntry_select_") |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
-    omopgenerics::recordCohortAttrition("Restricted to entries between {minEntry} and {maxEntry}",
-                                        cohortId = cohortId)
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::recordCohortAttrition(
+      "Restricted to entries between {minEntry} and {maxEntry}",
+      cohortId = cohortId
+    )
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {
@@ -113,6 +133,7 @@ requireIsEntry <- function(cohort,
 #' @inheritParams cohortDoc
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
+#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -126,12 +147,14 @@ requireIsEntry <- function(cohort,
 #'
 requireIsFirstEntry <- function(cohort,
                                 cohortId = NULL,
-                                name = tableName(cohort)) {
+                                name = tableName(cohort),
+                                .softValidation = TRUE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -141,17 +164,30 @@ requireIsFirstEntry <- function(cohort,
     return(cdm[[name]])
   }
 
+  if(isFALSE(needsIdFilter(cohort = cohort, cohortId = cohortId))){
+    cohort <- cohort |>
+      dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
+      dplyr::filter(
+        .data$cohort_start_date == min(.data$cohort_start_date, na.rm = TRUE)
+      )
+  } else {
+    cohort <- cohort |>
+      dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
+      dplyr::filter(
+        .data$cohort_start_date == min(.data$cohort_start_date, na.rm = TRUE) |
+          (!.data$cohort_definition_id %in% .env$cohortId)
+      )
+  }
+
   cohort <- cohort |>
-    dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
-    dplyr::filter(
-      .data$cohort_start_date == min(.data$cohort_start_date, na.rm = TRUE) |
-        (!.data$cohort_definition_id %in% .env$cohortId)
-    ) |>
     dplyr::ungroup() |>
-    dplyr::compute(name = name, temporary = FALSE,
-                   logPrefix = "CohortConstructor_requireIsFirstEntry_min_") |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
-    omopgenerics::recordCohortAttrition("Restricted to first entry", cohortId = cohortId)
+    dplyr::compute(
+      name = name, temporary = FALSE,
+      logPrefix = "CohortConstructor_requireIsFirstEntry_min_"
+    ) |>
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::recordCohortAttrition("Restricted to first entry",
+                                        cohortId = cohortId)
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {
@@ -173,6 +209,7 @@ requireIsFirstEntry <- function(cohort,
 #' @inheritParams cohortDoc
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
+#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -186,12 +223,14 @@ requireIsFirstEntry <- function(cohort,
 #'
 requireIsLastEntry <- function(cohort,
                                cohortId = NULL,
-                               name = tableName(cohort)) {
+                               name = tableName(cohort),
+                               .softValidation = TRUE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
+  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -201,16 +240,28 @@ requireIsLastEntry <- function(cohort,
     return(cdm[[name]])
   }
 
+  if(isFALSE(needsIdFilter(cohort = cohort, cohortId = cohortId))){
+    cohort <- cohort |>
+      dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
+      dplyr::filter(
+        .data$cohort_start_date == max(.data$cohort_start_date, na.rm = TRUE)
+      )
+  } else {
+    cohort <- cohort |>
+      dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
+      dplyr::filter(
+        .data$cohort_start_date == max(.data$cohort_start_date, na.rm = TRUE) |
+          (!.data$cohort_definition_id %in% .env$cohortId)
+      )
+  }
+
   cohort <- cohort |>
-    dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
-    dplyr::filter(
-      .data$cohort_start_date == max(.data$cohort_start_date, na.rm = TRUE) |
-        (!.data$cohort_definition_id %in% .env$cohortId)
-    ) |>
     dplyr::ungroup() |>
-    dplyr::compute(name = name, temporary = FALSE,
-                   logPrefix = "CohortConstructor_requireIsLastEntry_max_") |>
-    omopgenerics::newCohortTable(.softValidation = TRUE) |>
+    dplyr::compute(
+      name = name, temporary = FALSE,
+      logPrefix = "CohortConstructor_requireIsLastEntry_max_"
+    ) |>
+    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
     omopgenerics::recordCohortAttrition("Restricted to last entry", cohortId = cohortId)
 
   useIndexes <- getOption("CohortConstructor.use_indexes")

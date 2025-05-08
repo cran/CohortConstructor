@@ -50,7 +50,8 @@ test_that("simple example", {
   expect_true(nrow(cdm$cohort_2 |>
                      dplyr::collect()) == 0)
 
-
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  PatientProfiles::mockDisconnect(cdm)
 })
 
 test_that("overlapping entries", {
@@ -123,6 +124,15 @@ test_that("overlapping entries", {
         dplyr::filter(cohort_definition_id == 1)  |>
     dplyr::pull("cohort_end_date")))
 
+  # extra columns
+ expect_no_error(
+   cdm$cohort_3 <- cdm$cohort |>
+    dplyr::mutate(extra_col = 1) |>
+    padCohortEnd(days = 10, name = "cohort_3", cohortId = 2)
+ )
+
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  PatientProfiles::mockDisconnect(cdm)
 })
 
 test_that("test indexes - postgres", {
@@ -143,6 +153,8 @@ test_that("test indexes - postgres", {
     achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::contains("og_"))
+
   cdm <- omopgenerics::insertTable(cdm = cdm,
                                    name = "my_cohort",
                                    table = data.frame(cohort_definition_id = 1L,
@@ -158,7 +170,8 @@ test_that("test indexes - postgres", {
       "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
   )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
   CDMConnector::cdmDisconnect(cdm = cdm)
 })
 
@@ -311,6 +324,9 @@ test_that("adding days to cohort start", {
     cohortId = 1,
     name = "my_cohort 1"
   ))
+
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  PatientProfiles::mockDisconnect(cdm)
 })
 
 test_that("test indexes - postgres", {
@@ -346,7 +362,8 @@ test_that("test indexes - postgres", {
       "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
   )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
   CDMConnector::cdmDisconnect(cdm = cdm)
 })
 
@@ -389,4 +406,6 @@ test_that("test padCohortDate", {
     as.Date("2020-01-11")
   )
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  PatientProfiles::mockDisconnect(cdm)
 })

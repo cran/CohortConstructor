@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -424,7 +424,7 @@ cohort.</p>
 <div id="ratio-parameter" class="section level2">
 <h2>ratio parameter</h2>
 <p>The default matching ratio is 1:1 (<code>ratio = 1</code>). Use
-<code>cohort_counts()</code> from CDMConnector to check if the matching
+<code>cohortCount()</code> from CDMConnector to check if the matching
 has been done as desired.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort1)</span></code></pre></div>
 <p>You can modify the <code>ratio</code> parameter to tailor your

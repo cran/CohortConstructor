@@ -9,7 +9,8 @@ demographicsCohort(
   name,
   ageRange = NULL,
   sex = NULL,
-  minPriorObservation = NULL
+  minPriorObservation = NULL,
+  .softValidation = TRUE
 )
 }
 \arguments{
@@ -23,6 +24,13 @@ demographicsCohort(
 
 \item{minPriorObservation}{A minimum number of continuous prior observation
 days in the database.}
+
+\item{.softValidation}{Whether to perform a soft validation of consistency.
+If set to FALSE four additional checks will be performed: 1) a check that
+cohort end date is not before cohort start date,  2) a check that there
+are no missing values in required columns, 3) a check that cohort duration is
+all within observation period, and 4) that there are no overlapping
+cohort entries}
 }
 \value{
 A cohort table
@@ -41,6 +49,16 @@ cdm <- mockCohortConstructor()
 
 cohort <-  cdm |>
     demographicsCohort(name = "cohort3", ageRange = c(18,40), sex = "Male")
+
+attrition(cohort)
+
+# Can also create multiple demographic cohorts, and add minimum prior history requirements.
+
+cohort <- cdm |>
+    demographicsCohort(name = "cohort4",
+    ageRange = list(c(0, 19),c(20, 64),c(65, 150)),
+    sex = c("Male", "Female", "Both"),
+    minPriorObservation = 365)
 
 attrition(cohort)
 }

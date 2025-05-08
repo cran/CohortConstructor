@@ -107,6 +107,7 @@ test_that("simple example", {
   expect_error(cdm$cohort |> collapseCohorts(gap = -Inf))
   expect_error(cdm$cohort |> collapseCohorts(gap = "not a number"))
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
 
   PatientProfiles::mockDisconnect(cdm)
 })
@@ -165,7 +166,23 @@ test_that("infitine", {
                     dplyr::pull("cohort_end_date") ==
                     as.Date("2023-01-01")))
 
+  # test Id
+  cdm$cohort_collapsed2 <- cdm$cohort |>
+    dplyr::mutate("extra_col" = 1) |>
+    collapseCohorts(gap = Inf,
+                    name = "cohort_collapsed2",
+                    cohortId = 2)
+  expect_equal(collectCohort(cdm$cohort, 1), collectCohort(cdm$cohort_collapsed2, 1))
+  expect_true(
+    cdm$cohort_collapsed2 |>
+      attrition() |>
+      dplyr::filter(reason == "Collapse cohort with a gap of Inf days.") |>
+      dplyr::pull("cohort_definition_id") == 2
+  )
 
+
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  PatientProfiles::mockDisconnect(cdm)
 })
 
 test_that("multiple observation periods", {
@@ -229,6 +246,8 @@ test_that("multiple observation periods", {
   expect_true(nrow(cdm$cohort_1 |>
                      dplyr::collect()) == 2)
 
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+
   PatientProfiles::mockDisconnect(cdm)
 
 })
@@ -251,6 +270,8 @@ test_that("test indexes - postgres", {
     achillesSchema = Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
   )
 
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::contains("og_"))
+
   cdm <- omopgenerics::insertTable(cdm = cdm,
                                    name = "my_cohort",
                                    table = data.frame(cohort_definition_id = 1L,
@@ -265,6 +286,7 @@ test_that("test indexes - postgres", {
       "CREATE INDEX cc_my_cohort_subject_id_cohort_start_date_idx ON public.cc_my_cohort USING btree (subject_id, cohort_start_date)"
   )
 
-  omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
+  expect_true(sum(grepl("og", omopgenerics::listSourceTables(cdm))) == 0)
+  omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with("my_cohort"))
   CDMConnector::cdmDisconnect(cdm = cdm)
 })

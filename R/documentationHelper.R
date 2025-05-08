@@ -76,6 +76,8 @@ NULL
 #' table to consider.
 #' @param returnReason If TRUE it will return a column indicating which of the
 #' `dateColumns` was used.
+#' @param keepDateColumns If TRUE the returned cohort will keep columns in
+#' `dateColumns`.
 #'
 #' @name columnDateDoc
 #' @keywords internal
@@ -111,6 +113,8 @@ NULL
 #' intersect.
 #' @param targetCohortId Vector of cohort definition ids to include.
 #' @param tableName Name of the table to check for intersect.
+#' @param inObservation If TRUE only records inside an observation period will
+#' be considered.
 #'
 #' @name requireIntersectDoc
 #' @keywords internal
@@ -170,5 +174,18 @@ NULL
 #' observation_period (FALSE)
 #'
 #' @name padObservationDoc
+#' @keywords internal
+NULL
+
+#' Helper for consistent documentation of `.softValidation`.
+#'
+#' @param .softValidation Whether to perform a soft validation of consistency.
+#' If set to FALSE four additional checks will be performed: 1) a check that
+#' cohort end date is not before cohort start date,  2) a check that there
+#' are no missing values in required columns, 3) a check that cohort duration is
+#' all within observation period, and 4) that there are no overlapping
+#' cohort entries
+#'
+#' @name softValidationDoc
 #' @keywords internal
 NULL

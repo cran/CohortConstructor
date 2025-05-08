@@ -12,6 +12,7 @@
 #' @inheritParams keepOriginalCohortsDoc
 #' @param cohortName Name of the returned cohort. If NULL, the cohort name will
 #' be created by collapsing the individual cohort names, separated by "_".
+#' @inheritParams softValidationDoc
 #'
 #' @export
 #'
@@ -32,7 +33,8 @@ unionCohorts <- function(cohort,
                          gap = 0,
                          cohortName = NULL,
                          keepOriginalCohorts = FALSE,
-                         name = tableName(cohort)) {
+                         name = tableName(cohort),
+                         .softValidation = TRUE) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
@@ -41,7 +43,11 @@ unionCohorts <- function(cohort,
   omopgenerics::assertNumeric(gap, integerish = TRUE, min = 0, length = 1)
   omopgenerics::assertCharacter(cohortName, length = 1, null = TRUE)
   omopgenerics::assertLogical(keepOriginalCohorts, length = 1)
+  omopgenerics::assertLogical(.softValidation)
 
+  if (is.infinite(gap)) {
+    cli::cli_abort("`gap` can't be infinite")
+  }
   if (length(cohortId) < 2) {
     cli::cli_abort("Settings of cohort table must contain at least two cohorts.")
   }
@@ -58,11 +64,17 @@ unionCohorts <- function(cohort,
     gap = gap
   )
 
+  if (keepOriginalCohorts) {
+    if (any(cohortName %in% omopgenerics::settings(cohort)$cohort_name)) {
+      cli::cli_abort("Change `cohortName` as there is already a cohort named `{cohortName}` in the cohort.")
+    }
+  }
   # union cohort
   # save to a separate table so can append to original cohorts at the end
   tmpTable  <- omopgenerics::uniqueTableName()
-  unionedCohort <- cohort |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+  unionedCohort <- copyCohorts(cohort = cohort,
+                               name = tmpTable,
+                               cohortId = cohortId) |>
     PatientProfiles::addObservationPeriodId(name = tmpTable) |>
     joinOverlap(name = tmpTable,
                 by = c("observation_period_id", "subject_id"),
@@ -76,21 +88,27 @@ unionCohorts <- function(cohort,
   if (!is.null(cohCodelist)) {
     cohCodelist <- cohCodelist |> dplyr::mutate("cohort_definition_id" = 1L)
   }
-  cdm[[name]] <- unionedCohort |>
-    dplyr::compute(name = name, temporary = FALSE,
+
+  unionedCohort  <- unionedCohort |>
+    dplyr::compute(name = tmpTable, temporary = FALSE,
                    logPrefix = "CohortConstructor_unionCohorts_newCohort_") |>
     omopgenerics::newCohortTable(
       cohortSetRef = cohSet,
       cohortAttritionRef = NULL,
       cohortCodelistRef = cohCodelist,
-      .softValidation = FALSE
+      .softValidation = .softValidation
     )
 
   if (isTRUE(keepOriginalCohorts)) {
-    cdm <- bind(cohort, cdm[[name]], name = name)
+    cdm <- bind(cohort, unionedCohort, name = name)
+  } else {
+    cdm[[name]] <- unionedCohort |>
+      dplyr::compute(name = name, temporary = FALSE,
+                     logPrefix = "CohortConstructor_unionCohorts_name_") |>
+      omopgenerics::newCohortTable(.softValidation = TRUE)
   }
 
-  CDMConnector::dropTable(cdm, name = tmpTable)
+  CDMConnector::dropTable(cdm, name = dplyr::starts_with(tmpTable))
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
   if (!isFALSE(useIndexes)) {

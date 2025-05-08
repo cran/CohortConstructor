@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -373,7 +373,7 @@ individual.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [?? x 4]</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.1.3 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmp2b5z04\file31074e24582.duckdb]</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f0b914fc4.duckdb]</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 1                    1          1 1980-03-15        1980-03-29     </span></span>
@@ -383,7 +383,7 @@ individual.</p>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>cdm<span class="sc">$</span>medications_collapsed <span class="sc">|&gt;</span></span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; # Source:   SQL [?? x 4]</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.1.3 [eburn@Windows 10 x64:R 4.4.0/C:\Users\eburn\AppData\Local\Temp\Rtmp2b5z04\file31074e24582.duckdb]</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f0b914fc4.duckdb]</span></span>
 <span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;   cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;                  &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
 <span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; 1                    1          1 1971-01-04        1971-01-18     </span></span>
@@ -397,20 +397,20 @@ are merged to create a new record from 1980-03-15 to 1982-10-02.</p>
 <p>Now let’s look at how the cohorts have been changed.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>medications_collapsed)</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">tableCohortAttrition</span>(summary_attrition)</span></code></pre></div>
-<div id="pqdehoemoy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#pqdehoemoy table {
+<div id="srhrhvhzhu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#srhrhvhzhu table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#pqdehoemoy thead, #pqdehoemoy tbody, #pqdehoemoy tfoot, #pqdehoemoy tr, #pqdehoemoy td, #pqdehoemoy th {
+#srhrhvhzhu thead, #srhrhvhzhu tbody, #srhrhvhzhu tfoot, #srhrhvhzhu tr, #srhrhvhzhu td, #srhrhvhzhu th {
 border-style: none;
 }
-#pqdehoemoy p {
+#srhrhvhzhu p {
 margin: 0;
 padding: 0;
 }
-#pqdehoemoy .gt_table {
+#srhrhvhzhu .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -435,11 +435,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#pqdehoemoy .gt_caption {
+#srhrhvhzhu .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#pqdehoemoy .gt_title {
+#srhrhvhzhu .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -450,7 +450,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#pqdehoemoy .gt_subtitle {
+#srhrhvhzhu .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -461,7 +461,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#pqdehoemoy .gt_heading {
+#srhrhvhzhu .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -472,12 +472,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#pqdehoemoy .gt_bottom_border {
+#srhrhvhzhu .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#pqdehoemoy .gt_col_headings {
+#srhrhvhzhu .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -491,7 +491,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#pqdehoemoy .gt_col_heading {
+#srhrhvhzhu .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -510,7 +510,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#pqdehoemoy .gt_column_spanner_outer {
+#srhrhvhzhu .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -521,13 +521,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#pqdehoemoy .gt_column_spanner_outer:first-child {
+#srhrhvhzhu .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#pqdehoemoy .gt_column_spanner_outer:last-child {
+#srhrhvhzhu .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#pqdehoemoy .gt_column_spanner {
+#srhrhvhzhu .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -538,10 +538,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#pqdehoemoy .gt_spanner_row {
+#srhrhvhzhu .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#pqdehoemoy .gt_group_heading {
+#srhrhvhzhu .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -566,7 +566,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#pqdehoemoy .gt_empty_group_heading {
+#srhrhvhzhu .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -580,13 +580,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#pqdehoemoy .gt_from_md > :first-child {
+#srhrhvhzhu .gt_from_md > :first-child {
 margin-top: 0;
 }
-#pqdehoemoy .gt_from_md > :last-child {
+#srhrhvhzhu .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#pqdehoemoy .gt_row {
+#srhrhvhzhu .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -604,7 +604,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#pqdehoemoy .gt_stub {
+#srhrhvhzhu .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -616,7 +616,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#pqdehoemoy .gt_stub_row_group {
+#srhrhvhzhu .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -629,13 +629,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#pqdehoemoy .gt_row_group_first td {
+#srhrhvhzhu .gt_row_group_first td {
 border-top-width: 2px;
 }
-#pqdehoemoy .gt_row_group_first th {
+#srhrhvhzhu .gt_row_group_first th {
 border-top-width: 2px;
 }
-#pqdehoemoy .gt_summary_row {
+#srhrhvhzhu .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -644,14 +644,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#pqdehoemoy .gt_first_summary_row {
+#srhrhvhzhu .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#pqdehoemoy .gt_first_summary_row.thick {
+#srhrhvhzhu .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#pqdehoemoy .gt_last_summary_row {
+#srhrhvhzhu .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -660,7 +660,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#pqdehoemoy .gt_grand_summary_row {
+#srhrhvhzhu .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -669,7 +669,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#pqdehoemoy .gt_first_grand_summary_row {
+#srhrhvhzhu .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -678,7 +678,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#pqdehoemoy .gt_last_grand_summary_row_top {
+#srhrhvhzhu .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -687,10 +687,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#pqdehoemoy .gt_striped {
+#srhrhvhzhu .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#pqdehoemoy .gt_table_body {
+#srhrhvhzhu .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -698,7 +698,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#pqdehoemoy .gt_footnotes {
+#srhrhvhzhu .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -711,7 +711,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#pqdehoemoy .gt_footnote {
+#srhrhvhzhu .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -719,7 +719,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#pqdehoemoy .gt_sourcenotes {
+#srhrhvhzhu .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -732,64 +732,64 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#pqdehoemoy .gt_sourcenote {
+#srhrhvhzhu .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#pqdehoemoy .gt_left {
+#srhrhvhzhu .gt_left {
 text-align: left;
 }
-#pqdehoemoy .gt_center {
+#srhrhvhzhu .gt_center {
 text-align: center;
 }
-#pqdehoemoy .gt_right {
+#srhrhvhzhu .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#pqdehoemoy .gt_font_normal {
+#srhrhvhzhu .gt_font_normal {
 font-weight: normal;
 }
-#pqdehoemoy .gt_font_bold {
+#srhrhvhzhu .gt_font_bold {
 font-weight: bold;
 }
-#pqdehoemoy .gt_font_italic {
+#srhrhvhzhu .gt_font_italic {
 font-style: italic;
 }
-#pqdehoemoy .gt_super {
+#srhrhvhzhu .gt_super {
 font-size: 65%;
 }
-#pqdehoemoy .gt_footnote_marks {
+#srhrhvhzhu .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#pqdehoemoy .gt_asterisk {
+#srhrhvhzhu .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#pqdehoemoy .gt_indent_1 {
+#srhrhvhzhu .gt_indent_1 {
 text-indent: 5px;
 }
-#pqdehoemoy .gt_indent_2 {
+#srhrhvhzhu .gt_indent_2 {
 text-indent: 10px;
 }
-#pqdehoemoy .gt_indent_3 {
+#srhrhvhzhu .gt_indent_3 {
 text-indent: 15px;
 }
-#pqdehoemoy .gt_indent_4 {
+#srhrhvhzhu .gt_indent_4 {
 text-indent: 20px;
 }
-#pqdehoemoy .gt_indent_5 {
+#srhrhvhzhu .gt_indent_5 {
 text-indent: 25px;
 }
-#pqdehoemoy .katex-display {
+#srhrhvhzhu .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#pqdehoemoy div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#srhrhvhzhu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
@@ -811,52 +811,70 @@ height: 0px !important;
   </thead>
   <tbody class="gt_table_body">
     <tr class="gt_group_heading_row">
-      <th colspan="5" class="gt_group_heading" style="background-color: #E9E9E9; font-weight: bold;" scope="colgroup" id="An OMOP CDM database; acetaminophen">An OMOP CDM database; acetaminophen</th>
+      <th colspan="5" class="gt_group_heading" style="background-color: #E9E9E9; font-weight: bold;" scope="colgroup" id="Synthea; acetaminophen">Synthea; acetaminophen</th>
     </tr>
-    <tr class="gt_row_group_first"><td headers="An OMOP CDM database; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Initial qualifying events</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+    <tr class="gt_row_group_first"><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Initial qualifying events</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
-    <tr><td headers="An OMOP CDM database; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Record start &lt;= record end</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Record start &lt;= record end</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
-    <tr><td headers="An OMOP CDM database; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Record in observation</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Record in observation</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
-    <tr><td headers="An OMOP CDM database; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Merge overlapping records</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Non-missing sex</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
-    <tr><td headers="An OMOP CDM database; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Collapse cohort with a gap of 1095 days.</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Non-missing year of birth</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Merge overlapping records</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">9,365</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">0</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
+[header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
+    <tr><td headers="Synthea; acetaminophen  Reason" class="gt_row gt_left" style="text-align: left; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">Collapse cohort with a gap of 1095 days.</td>
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">7,975</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]number_subjects" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">2,580</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_records" class="gt_row gt_right" style="text-align: right; border-left-width: 1px; border-left-style: solid; border-left-color: #D3D3D3; border-right-width: 1px; border-right-style: solid; border-right-color: #D3D3D3; border-top-width: 1px; border-top-style: solid; border-top-color: #D3D3D3; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #D3D3D3;">1,390</td>
-<td headers="An OMOP CDM database; acetaminophen  [header_name]Variable name
+<td headers="Synthea; acetaminophen  [header_name]Variable name
 [header_level]excluded_subjects" class="gt_row gt_right" style="text-align: right;">0</td></tr>
   </tbody>
   

@@ -1,6 +1,6 @@
 Package: CohortConstructor
 Title: Build and Manipulate Study Cohorts Using a Common Data Model
-Version: 0.3.5
+Version: 0.4.0
 Authors@R: c(
     person("Edward", "Burn", , "edward.burn@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9286-1128")),
@@ -28,8 +28,8 @@ RoxygenNote: 7.3.2
 Imports: CDMConnector (>= 1.7.0), checkmate, cli, clock, dbplyr (>=
         2.5.0), dplyr, glue, magrittr, omopgenerics (>= 1.0.0),
         PatientProfiles (>= 1.2.3), purrr, rlang, tidyr, utils
-Suggests: DBI, CodelistGenerator, DrugUtilisation, duckdb, knitr,
-        rmarkdown, testthat (>= 3.0.0), tibble, stringr,
+Suggests: DBI, CodelistGenerator (>= 3.4.1), DrugUtilisation, duckdb,
+        knitr, rmarkdown, testthat (>= 3.0.0), tibble, stringr,
         IncidencePrevalence, omock (>= 0.2.0), covr, RPostgres, odbc,
         CohortCharacteristics, ggplot2, DiagrammeR, visOmopResults, gt,
         scales, here, ggpubr, SqlRender, CirceR, tictoc
@@ -41,16 +41,18 @@ URL: https://ohdsi.github.io/CohortConstructor/,
         https://github.com/OHDSI/CohortConstructor
 LazyData: true
 NeedsCompilation: no
-Packaged: 2025-02-16 13:03:31 UTC; eburn
-Author: Edward Burn [aut, cre] (<https://orcid.org/0000-0002-9286-1128>),
-  Marti Catala [aut] (<https://orcid.org/0000-0003-3308-9905>),
-  Nuria Mercade-Besora [aut] (<https://orcid.org/0009-0006-7948-3747>),
-  Marta Alcalde-Herraiz [aut] (<https://orcid.org/0009-0002-4405-1814>),
-  Mike Du [aut] (<https://orcid.org/0000-0002-9517-8834>),
-  Yuchen Guo [aut] (<https://orcid.org/0000-0002-0847-4855>),
-  Xihang Chen [aut] (<https://orcid.org/0009-0001-8112-8959>),
-  Kim Lopez-Guell [aut] (<https://orcid.org/0000-0002-8462-8668>),
-  Elin Rowlands [aut] (<https://orcid.org/0009-0005-5166-0417>)
+Packaged: 2025-05-08 09:14:45 UTC; eburn
+Author: Edward Burn [aut, cre] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
+  Marti Catala [aut] (ORCID: <https://orcid.org/0000-0003-3308-9905>),
+  Nuria Mercade-Besora [aut] (ORCID:
+    <https://orcid.org/0009-0006-7948-3747>),
+  Marta Alcalde-Herraiz [aut] (ORCID:
+    <https://orcid.org/0009-0002-4405-1814>),
+  Mike Du [aut] (ORCID: <https://orcid.org/0000-0002-9517-8834>),
+  Yuchen Guo [aut] (ORCID: <https://orcid.org/0000-0002-0847-4855>),
+  Xihang Chen [aut] (ORCID: <https://orcid.org/0009-0001-8112-8959>),
+  Kim Lopez-Guell [aut] (ORCID: <https://orcid.org/0000-0002-8462-8668>),
+  Elin Rowlands [aut] (ORCID: <https://orcid.org/0009-0005-5166-0417>)
 Maintainer: Edward Burn <edward.burn@ndorms.ox.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-02-16 14:10:02 UTC
+Date/Publication: 2025-05-08 10:00:02 UTC

@@ -2,14 +2,16 @@
 % Please edit documentation in R/measurementCohort.R
 \name{measurementCohort}
 \alias{measurementCohort}
-\title{Create cohorts measurement based cohorts}
+\title{Create measurement-based cohorts}
 \usage{
 measurementCohort(
   cdm,
   conceptSet,
   name,
   valueAsConcept = NULL,
-  valueAsNumber = NULL
+  valueAsNumber = NULL,
+  table = c("measurement", "observation"),
+  inObservation = TRUE
 )
 }
 \arguments{
@@ -30,6 +32,13 @@ they correspond to, as follows:
 list("unit_concept_id" = c(rangeValue1, rangeValue2)). If no name is supplied
 in the list, no requirement on unit concept id will be applied. If NULL, all
 entries independent of their value as number will be included.}
+
+\item{table}{Name of OMOP tables to search for records of the concepts
+provided. Options are "measurement" and/or "observation".}
+
+\item{inObservation}{If TRUE, only records in observation will be used. If
+FALSE, records before the start of observation period will be considered,
+with startdate the start of observation.}
 }
 \value{
 A cohort table
@@ -76,7 +85,7 @@ cdm$measurement <- dplyr::tibble(
   person_id = c(1, 1, 2, 3),
   measurement_concept_id = c(4326744, 4298393, 4298393, 45770407),
   measurement_date = as.Date(c("2000-07-01", "2000-12-11", "2002-09-08",
-                                "2015-02-19")),
+  "2015-02-19")),
   measurement_type_concept_id = NA,
   value_as_number = c(100, 125, NA, NA),
   value_as_concept_id = c(0, 0, 0, 4124457),
@@ -91,9 +100,27 @@ cdm$cohort <- measurementCohort(
   name = "cohort",
   conceptSet = list("normal_blood_pressure" = c(4326744, 4298393, 45770407)),
   valueAsConcept = c(4124457),
-  valueAsNumber = list("8876" = c(70, 120))
+  valueAsNumber = list("8876" = c(70, 120)),
+  inObservation = TRUE
 )
 
 cdm$cohort
+
+# You can also create multiple measurement cohorts, and include records
+# outside the observation period.
+
+cdm$cohort2 <- measurementCohort(
+  cdm = cdm,
+  name = "cohort2",
+  conceptSet = list("normal_blood_pressure" = c(4326744, 4298393, 45770407),
+                  "high_blood_pressure" = c(4326744, 4298393, 45770407)),
+  valueAsConcept = c(4124457),
+  valueAsNumber = list("8876" = c(70, 120),
+                       "8876" = c(121, 200)),
+  inObservation = FALSE
+)
+
+cdm$cohort2
+
 }
 }

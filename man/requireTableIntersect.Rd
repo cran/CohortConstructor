@@ -13,8 +13,10 @@ requireTableIntersect(
   indexDate = "cohort_start_date",
   targetStartDate = startDateColumn(tableName),
   targetEndDate = endDateColumn(tableName),
+  inObservation = TRUE,
   censorDate = NULL,
-  name = tableName(cohort)
+  name = tableName(cohort),
+  .softValidation = TRUE
 )
 }
 \arguments{
@@ -44,10 +46,20 @@ incidence of target event in the window will be considered as intersection,
 otherwise prevalence of that event will be used as intersection (overlap
 between cohort and event).}
 
+\item{inObservation}{If TRUE only records inside an observation period will
+be considered.}
+
 \item{censorDate}{Whether to censor overlap events at a specific date or a
 column date of the cohort.}
 
 \item{name}{Name of the new cohort table created in the cdm object.}
+
+\item{.softValidation}{Whether to perform a soft validation of consistency.
+If set to FALSE four additional checks will be performed: 1) a check that
+cohort end date is not before cohort start date,  2) a check that there
+are no missing values in required columns, 3) a check that cohort duration is
+all within observation period, and 4) that there are no overlapping
+cohort entries}
 }
 \value{
 Cohort table with only those in the other table kept (or those that
