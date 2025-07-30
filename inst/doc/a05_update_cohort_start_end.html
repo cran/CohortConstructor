@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -60,7 +60,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -457,19 +457,19 @@ acetaminophen prescriptions after cohort start, or cohort end date.</p>
 <span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; Joining with `by = join_by(cohort_definition_id, subject_id, cohort_end_date)`</span></span>
 <span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_first </span>
 <span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_entry_first&gt; [?? x 7]</span></span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.5.0:R 4.5.1//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/RtmpwyN0k0/file110b819db0a29.duckdb]</span></span>
 <span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;  1                    1        152 1976-09-10        2018-10-29     </span></span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;  2                    1        177 2000-05-31        2019-05-13     </span></span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;  3                    1        374 1986-04-06        2017-05-25     </span></span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;  4                    1        390 1989-10-20        2019-06-05     </span></span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt;  5                    1        422 1976-12-08        2019-04-28     </span></span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt;  6                    1        431 1964-11-03        2018-09-28     </span></span>
-<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;  7                    1        525 1994-09-07        2018-07-23     </span></span>
-<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt;  8                    1        689 2010-03-27        2019-04-21     </span></span>
-<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;  9                    1        670 1977-09-15        2018-09-13     </span></span>
-<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 10                    1        730 1962-09-16        2018-12-16     </span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;  1                    1       3093 1984-11-19        2019-04-07     </span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;  2                    1        180 2019-05-02        2019-05-02     </span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;  3                    1       3514 1981-06-14        2018-09-04     </span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;  4                    1       5041 2007-02-14        2018-06-20     </span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt;  5                    1       4197 2016-11-27        2016-11-27     </span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt;  6                    1       1377 2008-12-02        2017-12-20     </span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;  7                    1       3626 1988-08-06        2018-05-05     </span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt;  8                    1       1586 1954-06-21        2018-10-28     </span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;  9                    1       4394 2018-05-28        2018-05-28     </span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 10                    1       5068 1962-04-09        2019-01-19     </span></span>
 <span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span>
 <span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: entry_reason &lt;chr&gt;, diclofenac &lt;date&gt;,</span></span>
 <span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; #   acetaminophen &lt;date&gt;</span></span></code></pre></div>
@@ -488,19 +488,19 @@ latest date among specified columns.</p>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_entry_last</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_entry_last&gt; [?? x 5]</span></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.5.0:R 4.5.1//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/RtmpwyN0k0/file110b819db0a29.duckdb]</span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;  1                    1        409 2019-01-18        2019-01-18     </span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       2876 2018-11-09        2018-11-09     </span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       4359 2019-03-07        2019-03-07     </span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       4480 2018-10-09        2018-10-09     </span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       4649 2019-06-03        2019-06-03     </span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       1478 2019-06-04        2019-06-04     </span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       3025 2002-10-21        2002-10-21     </span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       3759 2018-08-12        2018-08-12     </span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       3929 2006-01-23        2006-01-23     </span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       2771 2018-09-07        2018-09-07     </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;  1                    1       3177 2012-06-06        2012-06-06     </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       1113 2017-12-05        2017-12-05     </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       1496 1998-05-17        1998-05-17     </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       3212 2018-08-10        2018-08-10     </span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       3744 2019-01-18        2019-01-18     </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       4122 2018-10-18        2018-10-18     </span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt;  7                    1        546 2019-04-07        2019-04-07     </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt;  8                    1        906 2018-03-20        2018-03-20     </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       3123 2018-10-25        2018-10-25     </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; 10                    1        715 2018-02-20        2018-02-20     </span></span>
 <span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span>
 <span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; # ℹ 1 more variable: entry_reason &lt;chr&gt;</span></span></code></pre></div>
 <p>In this example, we set <code>keepDateColumns</code> to FALSE, which
@@ -522,19 +522,19 @@ would be the end:</p>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_first </span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_exit_first&gt; [?? x 5]</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.5.0:R 4.5.1//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/RtmpwyN0k0/file110b819db0a29.duckdb]</span></span>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date exit_reason</span></span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;          &lt;chr&gt;      </span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  1                    1       2909 1945-02-26        1952-03-21      acetaminop…</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       5199 1962-01-16        1963-10-09      acetaminop…</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       3533 1961-11-30        1994-10-09      acetaminop…</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       1478 1961-03-21        1975-09-05      acetaminop…</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       3759 1964-08-09        1982-08-05      acetaminop…</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       4261 1922-03-12        1929-09-02      acetaminop…</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       4738 1909-09-17        1922-12-17      acetaminop…</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       1229 1954-05-15        1957-07-29      acetaminop…</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       1791 1954-11-25        1963-05-14      acetaminop…</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       2135 1948-02-02        1953-02-06      acetaminop…</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  1                    1       2939 1953-01-20        1974-09-29      acetaminop…</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       1431 1949-10-02        1963-06-22      acetaminop…</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       2431 1971-07-21        1992-09-29      acetaminop…</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       3558 1959-03-28        1964-02-02      acetaminop…</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       3352 1964-10-23        1981-02-10      acetaminop…</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       2861 1963-07-08        1982-03-30      acetaminop…</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       1511 1965-04-25        1966-01-22      acetaminop…</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       5257 1978-03-15        1986-07-03      acetaminop…</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       4208 1938-11-22        1941-11-08      acetaminop…</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       1081 1961-08-16        1963-03-10      acetaminop…</span></span>
 <span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span></code></pre></div>
 </div>
 <div id="exitatlastdate" class="section level3">
@@ -550,19 +550,19 @@ end date to the latest date among specified columns.</p>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  )</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>cdm<span class="sc">$</span>cohort_exit_last</span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;my_study_cohort_exit_last&gt; [?? x 4]</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.0.0 [eburn@Windows 10 x64:R 4.2.1/C:\Users\eburn\AppData\Local\Temp\RtmpUtkMzn\file75f018e4f08.duckdb]</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.5.0:R 4.5.1//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/RtmpwyN0k0/file110b819db0a29.duckdb]</span></span>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;    cohort_definition_id subject_id cohort_start_date cohort_end_date</span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;                   &lt;int&gt;      &lt;int&gt; &lt;date&gt;            &lt;date&gt;         </span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  1                    1        144 1974-12-20        2019-01-04     </span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       1016 1967-06-14        2019-06-26     </span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;  3                    1       1115 1948-07-05        2018-12-10     </span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       5279 1946-01-27        2019-06-09     </span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       2997 1981-10-04        2018-12-16     </span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       3857 1944-01-05        2018-08-01     </span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       4641 1967-07-13        2018-07-19     </span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       5335 1958-08-22        2019-03-18     </span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;  9                    1       1407 1967-11-11        2018-11-17     </span></span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; 10                    1        212 1970-03-21        2019-05-11     </span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  1                    1       1316 1948-10-26        2019-06-18     </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;  2                    1       4899 1920-06-01        1998-11-17     </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;  3                    1        412 1953-05-15        2004-06-25     </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;  4                    1       3721 1963-11-15        2019-06-14     </span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;  5                    1       4282 1966-04-06        2019-04-24     </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;  6                    1       2960 1955-02-04        2019-04-26     </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;  7                    1       1641 1954-09-22        2019-03-27     </span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;  8                    1       2903 1963-09-15        2019-04-28     </span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;  9                    1        349 1957-08-31        2019-05-04     </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; 10                    1       2925 1960-01-11        2019-04-08     </span></span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; # ℹ more rows</span></span></code></pre></div>
 <p>In this last example, the return cohort doesn’t have the specified
 date columns, neither the “reason” column indicating which date was used

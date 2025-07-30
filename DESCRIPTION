@@ -1,6 +1,6 @@
 Package: CohortConstructor
 Title: Build and Manipulate Study Cohorts Using a Common Data Model
-Version: 0.4.0
+Version: 0.5.0
 Authors@R: c(
     person("Edward", "Burn", , "edward.burn@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9286-1128")),
@@ -41,7 +41,7 @@ URL: https://ohdsi.github.io/CohortConstructor/,
         https://github.com/OHDSI/CohortConstructor
 LazyData: true
 NeedsCompilation: no
-Packaged: 2025-05-08 09:14:45 UTC; eburn
+Packaged: 2025-07-30 17:50:54 UTC; orms0426
 Author: Edward Burn [aut, cre] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
   Marti Catala [aut] (ORCID: <https://orcid.org/0000-0003-3308-9905>),
   Nuria Mercade-Besora [aut] (ORCID:
@@ -55,4 +55,4 @@ Author: Edward Burn [aut, cre] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
   Elin Rowlands [aut] (ORCID: <https://orcid.org/0009-0005-5166-0417>)
 Maintainer: Edward Burn <edward.burn@ndorms.ox.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-05-08 10:00:02 UTC
+Date/Publication: 2025-07-30 18:30:02 UTC

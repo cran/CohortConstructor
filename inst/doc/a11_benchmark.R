@@ -76,10 +76,12 @@ eval = NOT_CRAN
 #                   writePrefix = "my_study_")
 
 ## ----echo=TRUE----------------------------------------------------------------
-# benchmark_results <- benchmarkCohortConstructor(cdm,
-#                runCIRCE = FALSE,
-#                runCohortConstructorDefinition = FALSE,
-#                runCohortConstructorDomain = TRUE)
+# benchmark_results <- benchmarkCohortConstructor(
+#   cdm,
+#   runCIRCE = FALSE,
+#   runCohortConstructorDefinition = FALSE,
+#   runCohortConstructorDomain = TRUE
+# )
 # benchmark_results |>
 #   glimpse()
 
@@ -100,7 +102,7 @@ eval = NOT_CRAN
 #             locations = cells_body(columns = 1:2))
 
 ## ----fig.width=10, fig.height=7-----------------------------------------------
-# benchmarkData$comparison |>
+# gg <- benchmarkData$comparison |>
 #   plotCohortOverlap(uniqueCombinations = FALSE, facet = "cdm_name") +
 #   scale_y_discrete(labels = niceOverlapLabels) +
 #   theme(
@@ -112,7 +114,34 @@ eval = NOT_CRAN
 #   ) +
 #   # facet_wrap("cdm_name") +
 #   scale_fill_discrete(labels = c("Both", "CIRCE", "CohortConstructor")) +
-#   scale_color_discrete(labels = c("Both", "CIRCE", "CohortConstructor"))
+#   scale_color_discrete(labels = c("Both", "CIRCE", "CohortConstructor")) +
+#   xlab("")
+# 
+# gg$data <- gg$data |>
+#   dplyr::mutate(
+#     cohort_name_reference_cohort_name_comparator = visOmopResults::customiseText(gsub("cc_| -.*", "", cohort_name_reference_cohort_name_comparator)),
+#     cohort_name_reference_cohort_name_comparator = case_when(
+#       grepl("Asthma", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "Asthma without COPD",
+#       grepl("Covid", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ gsub("Covid|Covid", "COVID-19", cohort_name_reference_cohort_name_comparator),
+#       grepl("eutropenia", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "Acquired neutropenia or unspecified leukopenia",
+#       grepl("Hosp", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "Inpatient hospitalisation",
+#       grepl("First", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "First major depression",
+#       grepl("fluoro", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "New fluoroquinolone users",
+#       grepl("Beta", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "New users of beta blockers nested in essential hypertension",
+#       .default = .data[["cohort_name_reference_cohort_name_comparator"]]
+#     ),
+#     cohort_name_reference_cohort_name_comparator = if_else(
+#       grepl("COVID", .data[["cohort_name_reference_cohort_name_comparator"]]),
+#       gsub(" female", ": female", gsub(" male", ": male", .data[["cohort_name_reference_cohort_name_comparator"]])),
+#       .data[["cohort_name_reference_cohort_name_comparator"]]
+#     ),
+#     cohort_name_reference_cohort_name_comparator = if_else(
+#       grepl(" to ", .data[["cohort_name_reference_cohort_name_comparator"]]),
+#       gsub("male ", "male, ", .data[["cohort_name_reference_cohort_name_comparator"]]),
+#       .data[["cohort_name_reference_cohort_name_comparator"]]
+#     )
+#   )
+# gg
 
 ## -----------------------------------------------------------------------------
 # ## TABLE with same results as the plot below.
@@ -183,31 +212,4 @@ eval = NOT_CRAN
 #             locations = cells_column_labels()) |>
 #   tab_style(style = list(cell_text(weight = "bold")),
 #             locations = cells_body(columns = 1))
-
-## ----fig.width=10, fig.height=7-----------------------------------------------
-# benchmarkData$sql_indexes |>
-#   distinct() |>
-#   group_by(cdm_name, msg) |>
-#   summarise(time = sum(as.numeric(toc) - as.numeric(tic))/60, .groups = "drop") |>
-#   mutate(
-#     Index = if_else(grepl("No index", msg), "Without SQL index", "With SQL index"),
-#     Domains = str_to_sentence(gsub("No index: |Index: | domains| domain", "", msg)),
-#     Domains = gsub("procedure ", "procedure, ", Domains)
-#   ) |>
-#   ggplot(aes(y = Domains, x = time, colour = Index, fill = Index)) +
-#   geom_col(position = "dodge", width = 0.6) +
-#   xlab("Time (minutes)") +
-#   scale_y_discrete(labels = label_wrap(15)) +
-#   theme(
-#     legend.title=element_blank(),
-#     legend.position = "bottom",
-#     legend.text = element_text(size = 12),
-#     strip.text = element_text(size = 14),
-#     # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 12),
-#     axis.text.x = element_text(size = 12),
-#     axis.text.y = element_text(size = 12),
-#     axis.title.x = element_text(size = 14),
-#     axis.title.y = element_text(size = 14)
-#   ) +
-#   facet_wrap(vars(cdm_name), scales = "free_x")
 
