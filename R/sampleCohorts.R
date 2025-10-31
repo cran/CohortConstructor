@@ -16,10 +16,11 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#'
-#' cdm <- mockCohortConstructor(nPerson = 100)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
 #'
 #' cdm$cohort2 |> sampleCohorts(cohortId = 1, n = 10)
+#' }
 #' }
 sampleCohorts <- function(cohort,
                           n,

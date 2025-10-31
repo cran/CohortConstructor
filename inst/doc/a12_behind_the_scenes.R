@@ -9,31 +9,19 @@ knitr::opts_chunk$set(
   eval = NOT_CRAN
 )
 
-library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-downloadEunomiaData()  
-}
-
-
 ## -----------------------------------------------------------------------------
-# library(CDMConnector)
+# library(omock)
 # library(CodelistGenerator)
 # library(PatientProfiles)
 # library(CohortConstructor)
 # library(dplyr)
 # 
-# con <- DBI::dbConnect(duckdb::duckdb(),
-#                       dbdir = eunomiaDir())
-# cdm <- cdmFromCon(con, cdmSchema = "main", writeSchema = "main",
-#                   writePrefix = "my_study_")
-# drug_codes <- getDrugIngredientCodes(cdm,
-#                                      name = c("acetaminophen",
-#                                               "amoxicillin",
-#                                               "diclofenac",
-#                                               "simvastatin",
-#                                               "warfarin"))
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
+# 
+# drug_codes <- getDrugIngredientCodes(
+#   cdm = cdm,
+#   name = c("acetaminophen", "amoxicillin", "diclofenac", "simvastatin", "warfarin")
+# )
 
 ## -----------------------------------------------------------------------------
 # dir_sql <- file.path(tempdir(), "sql_folder")
@@ -54,7 +42,7 @@ downloadEunomiaData()
 #   cat(sql_with_quotes, "\n```\n\n")
 # }
 
-## -----------------------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 # dir_explain <- file.path(tempdir(), "explain_folder")
 # dir.create(dir_explain)
 # options("omopgenerics.log_sql_explain_path" = dir_explain)

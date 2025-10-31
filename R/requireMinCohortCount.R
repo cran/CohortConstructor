@@ -22,11 +22,12 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#'
-#' cdm <- mockCohortConstructor(nPerson = 100)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
 #'
 #' cdm$cohort1 |>
 #' requireMinCohortCount(5)
+#' }
 #' }
 requireMinCohortCount <- function(cohort,
                                   minCohortCount,
@@ -65,7 +66,7 @@ requireMinCohortCount <- function(cohort,
                      logPrefix = "CohortConstructor_requireMinCohortCount_fewer_") |>
       omopgenerics::recordCohortAttrition(
         reason = "Fewer than minimum cohort count of {minCohortCount}",
-        cohortId = cohortsToDrop
+        cohortId = cohortId
       )
   } else {
     cdm[[name]] <- cohort |>

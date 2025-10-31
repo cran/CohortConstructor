@@ -16,11 +16,14 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
 #'
-#' cdm <- mockCohortConstructor(nPerson = 100)
+#' cdm$cohort1 <- cdm$cohort1 |>
+#'   yearCohorts(years = 2000:2002)
 #'
-#' cdm$cohort1 <- cdm$cohort1 |> yearCohorts(years = 2000:2002)
 #' settings(cdm$cohort1)
+#' }
 #' }
 yearCohorts <- function(cohort,
                         years,
@@ -57,6 +60,8 @@ yearCohorts <- function(cohort,
 
     return(cohort)
   }
+
+  originalAttrition <- attrition(cohort)
 
   # temp tables
   tablePrefix <- omopgenerics::tmpPrefix()
@@ -103,6 +108,9 @@ yearCohorts <- function(cohort,
   cohort <- cohort |>
     subsetCohorts(cohortId = cohortId, name = name)
 
+  # get original attrition
+  originalAttrition <- attrition(cohort)
+
   cohort <- cohort |>
     dplyr::mutate(!!!startDates, !!!endDates) |>
     dplyr::select(!c("cohort_start_date", "cohort_end_date")) |>
@@ -134,7 +142,6 @@ yearCohorts <- function(cohort,
     ) |>
     dplyr::collect() |>
     dplyr::mutate(dplyr::across(dplyr::everything(), as.integer))
-  originalAttrition <- attrition(cohort)
   newAttrition <- list()
   for (k in newSet$cohort_definition_id) {
     targetId <- newSet$target_cohort_definition_id[newSet$cohort_definition_id == k]

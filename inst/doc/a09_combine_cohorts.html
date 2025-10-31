@@ -340,14 +340,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CohortCharacteristics)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
-<p>For this example we’ll use the Eunomia synthetic data from the
-CDMConnector package.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                    <span class="at">writeSchema =</span> <span class="fu">c</span>(<span class="at">prefix =</span> <span class="st">&quot;my_study_&quot;</span>, <span class="at">schema =</span> <span class="st">&quot;main&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(omock)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(CohortCharacteristics)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+<p>For this example we’ll use the Eunomia synthetic data from the <a href="https://ohdsi.github.io/omock/">omock</a> package.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockCdmFromDataset</span>(<span class="at">datasetName =</span> <span class="st">&quot;GiBleed&quot;</span>, <span class="at">source =</span> <span class="st">&quot;duckdb&quot;</span>)</span></code></pre></div>
 <p>Let’s start by creating two drug cohorts, one for users of diclofenac
 and another for users of acetaminophen.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(<span class="at">cdm =</span> cdm, </span>
@@ -357,7 +355,7 @@ and another for users of acetaminophen.</p>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medications)</span></code></pre></div>
 <p>To check whether there is an overlap between records in both cohorts
 using the function <code>intersectCohorts()</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cdm<span class="sc">$</span>medintersect <span class="ot">&lt;-</span> CohortConstructor<span class="sc">::</span><span class="fu">intersectCohorts</span>(</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cdm<span class="sc">$</span>medintersect <span class="ot">&lt;-</span> <span class="fu">intersectCohorts</span>(</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">cohort =</span> cdm<span class="sc">$</span>medications,</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;medintersect&quot;</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>)</span>
@@ -367,7 +365,7 @@ using the function <code>intersectCohorts()</code>.</p>
 and acetaminophen cohorts.</p>
 <p>We can choose the number of days between cohort entries using the
 <code>gap</code> argument.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medintersect <span class="ot">&lt;-</span> CohortConstructor<span class="sc">::</span><span class="fu">intersectCohorts</span>(</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cdm<span class="sc">$</span>medintersect <span class="ot">&lt;-</span> <span class="fu">intersectCohorts</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">cohort =</span> cdm<span class="sc">$</span>medications,</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">gap =</span> <span class="dv">365</span>,</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;medintersect&quot;</span></span>
@@ -378,7 +376,7 @@ and acetaminophen cohorts.</p>
 days) in the diclofenac and acetaminophen cohorts.</p>
 <p>We can also combine different cohorts using the function
 <code>unionCohorts()</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> CohortConstructor<span class="sc">::</span><span class="fu">unionCohorts</span>(</span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> <span class="fu">unionCohorts</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">cohort =</span> cdm<span class="sc">$</span>medications,</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;medunion&quot;</span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span>
@@ -388,7 +386,7 @@ days) in the diclofenac and acetaminophen cohorts.</p>
 the diclofenac cohort or the acetaminophen cohort.</p>
 <p>You can keep the original cohorts in the new table if you use the
 argument <code>keepOriginalCohorts = TRUE</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> CohortConstructor<span class="sc">::</span><span class="fu">unionCohorts</span>(</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> <span class="fu">unionCohorts</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">cohort =</span> cdm<span class="sc">$</span>medications,</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;medunion&quot;</span>,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">keepOriginalCohorts =</span> <span class="cn">TRUE</span></span>
@@ -397,7 +395,7 @@ argument <code>keepOriginalCohorts = TRUE</code>.</p>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medunion)</span></code></pre></div>
 <p>You can also choose the number of days between two subsequent cohort
 entries to be merged using the <code>gap</code> argument.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> CohortConstructor<span class="sc">::</span><span class="fu">unionCohorts</span>(</span>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cdm<span class="sc">$</span>medunion <span class="ot">&lt;-</span> <span class="fu">unionCohorts</span>(</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">cohort =</span> cdm<span class="sc">$</span>medications,</span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;medunion&quot;</span>,</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">gap =</span> <span class="dv">365</span>,</span>

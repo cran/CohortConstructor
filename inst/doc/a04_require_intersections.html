@@ -341,16 +341,15 @@ cohorts, concept sets, or tables</h1>
 
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CodelistGenerator)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(CohortCharacteristics)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(visOmopResults)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
-<p>For this example we’ll use the Eunomia synthetic data from the
-CDMConnector package.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> CDMConnector<span class="sc">::</span><span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                    <span class="at">writeSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writePrefix =</span> <span class="st">&quot;my_study_&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(omock)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(CodelistGenerator)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(CohortCharacteristics)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(visOmopResults)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div>
+<p>For this example we’ll use the Eunomia synthetic data from the <a href="https://ohdsi.github.io/omock/">omock</a> package.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockCdmFromDataset</span>(<span class="at">datasetName =</span> <span class="st">&quot;GiBleed&quot;</span>, <span class="at">source =</span> <span class="st">&quot;duckdb&quot;</span>)</span></code></pre></div>
 <p>Let’s start by creating a cohort of warfarin users.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>warfarin_codes <span class="ot">&lt;-</span> <span class="fu">getDrugIngredientCodes</span>(cdm, <span class="st">&quot;warfarin&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(<span class="at">cdm =</span> cdm, </span>
@@ -399,6 +398,55 @@ individuals’ absence in this other cohort.</p>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_no_gi_bleed)</span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<p>We can also apply restrictions related to multiple cohorts at the
+same time. Here, for example, we require individuals to be in one of our
+injury cohorts in the prior year.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cdm<span class="sc">$</span>injuries <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">cdm =</span> cdm,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;injuries&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">conceptSet =</span> <span class="fu">list</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="st">&quot;ankle_sprain&quot;</span> <span class="ot">=</span> <span class="dv">81151</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="st">&quot;ankle_fracture&quot;</span> <span class="ot">=</span> <span class="dv">4059173</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="st">&quot;forearm_fracture&quot;</span> <span class="ot">=</span> <span class="dv">4278672</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="st">&quot;hip_fracture&quot;</span> <span class="ot">=</span> <span class="dv">4230399</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  ),</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  <span class="at">exit =</span> <span class="st">&quot;event_start_date&quot;</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>)</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_any_injury <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin <span class="sc">|&gt;</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="fu">requireCohortIntersect</span>(<span class="at">intersections =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="cn">Inf</span>),</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>                         <span class="at">cohortCombinationCriteria =</span> <span class="st">&quot;any&quot;</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>                         <span class="at">targetCohortTable =</span> <span class="st">&quot;injuries&quot;</span>, </span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_any_injury&quot;</span>) </span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_any_injury)</span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<p>We could instead require them to be in all of our injury cohorts</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_any_injury <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersect</span>(<span class="at">intersections =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="cn">Inf</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                         <span class="at">cohortCombinationCriteria =</span> <span class="st">&quot;all&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                         <span class="at">targetCohortTable =</span> <span class="st">&quot;injuries&quot;</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_any_injury&quot;</span>) </span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_any_injury)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<p>Or, we could require them to be in at least 2 of our injury
+cohorts</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_any_injury <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">requireCohortIntersect</span>(<span class="at">intersections =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="cn">Inf</span>),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                         <span class="at">cohortCombinationCriteria =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="cn">Inf</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                         <span class="at">targetCohortTable =</span> <span class="st">&quot;injuries&quot;</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_any_injury&quot;</span>) </span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_any_injury)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
 </div>
 <div id="restrictions-on-concept-presence" class="section level2">
 <h2>Restrictions on concept presence</h2>
@@ -407,14 +455,14 @@ seen (or not seen) to have events related to a concept list. To do this
 we can use the <code>requireConceptIntersect()</code> function, allowing
 us to filter our cohort based on whether they have or have not had
 events of GI bleeding before they entered the cohort.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">requireConceptIntersect</span>(<span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">&quot;gi_bleed&quot;</span> <span class="ot">=</span> <span class="dv">192671</span>), </span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_gi_bleed&quot;</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_gi_bleed)</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">requireConceptIntersect</span>(<span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">&quot;gi_bleed&quot;</span> <span class="ot">=</span> <span class="dv">192671</span>), </span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_gi_bleed&quot;</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_gi_bleed)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
 <p>The flow chart above illustrates the changes to cohort 1 when
 restricted to only include individuals who have had events of GI
 bleeding at least once before the cohort start date. 2,296 individuals
@@ -424,15 +472,15 @@ could instead require that they don’t have any events of it. In this
 case we can again use the <code>requireConceptIntersect()</code>
 function, but this time set the intersections argument to 0 to require
 individuals without past events of GI bleeding.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_no_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">requireConceptIntersect</span>(<span class="at">intersections =</span> <span class="dv">0</span>,</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                         <span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">&quot;gi_bleed&quot;</span> <span class="ot">=</span> <span class="dv">192671</span>), </span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_no_gi_bleed&quot;</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_no_gi_bleed)</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_no_gi_bleed <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="fu">requireConceptIntersect</span>(<span class="at">intersections =</span> <span class="dv">0</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>                         <span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">&quot;gi_bleed&quot;</span> <span class="ot">=</span> <span class="dv">192671</span>), </span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="dv">0</span>), </span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_no_gi_bleed&quot;</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_no_gi_bleed)</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
 </div>
 <div id="restrictions-on-presence-in-clinical-tables" class="section level2">
 <h2>Restrictions on presence in clinical tables</h2>
@@ -441,14 +489,14 @@ absence) in clinical tables in the OMOP CDM using the
 <code>requireTableIntersect()</code> function. Here for example we
 reuire that individuals in our warfarin cohort have at least one prior
 record in the visit occurrence table.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_visit <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">requireTableIntersect</span>(<span class="at">tableName =</span> <span class="st">&quot;visit_occurrence&quot;</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="sc">-</span><span class="dv">1</span>), </span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_visit&quot;</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_visit)</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>cdm<span class="sc">$</span>warfarin_visit <span class="ot">&lt;-</span> cdm<span class="sc">$</span>warfarin  <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="fu">requireTableIntersect</span>(<span class="at">tableName =</span> <span class="st">&quot;visit_occurrence&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                         <span class="at">indexDate =</span> <span class="st">&quot;cohort_start_date&quot;</span>, </span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>                         <span class="at">window =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="sc">-</span><span class="dv">1</span>), </span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>                         <span class="at">name =</span> <span class="st">&quot;warfarin_visit&quot;</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>summary_attrition <span class="ot">&lt;-</span> <span class="fu">summariseCohortAttrition</span>(cdm<span class="sc">$</span>warfarin_visit)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">plotCohortAttrition</span>(summary_attrition)</span></code></pre></div>
 </div>
 
 

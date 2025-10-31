@@ -16,8 +16,7 @@ requireTableIntersect(
   inObservation = TRUE,
   censorDate = NULL,
   atFirst = FALSE,
-  name = tableName(cohort),
-  .softValidation = TRUE
+  name = tableName(cohort)
 )
 }
 \arguments{
@@ -48,7 +47,7 @@ otherwise prevalence of that event will be used as intersection (overlap
 between cohort and event).}
 
 \item{inObservation}{If TRUE only records inside an observation period will
-be considered.}
+be considered}
 
 \item{censorDate}{Whether to censor overlap events at a specific date or a
 column date of the cohort.}
@@ -57,13 +56,6 @@ column date of the cohort.}
 TRUE, it will only be required for the first entry of each subject.}
 
 \item{name}{Name of the new cohort table created in the cdm object.}
-
-\item{.softValidation}{Whether to perform a soft validation of consistency.
-If set to FALSE four additional checks will be performed: 1) a check that
-cohort end date is not before cohort start date,  2) a check that there
-are no missing values in required columns, 3) a check that cohort duration is
-all within observation period, and 4) that there are no overlapping
-cohort entries}
 }
 \value{
 Cohort table
@@ -76,10 +68,13 @@ a clinical table in some time window around an index date.
 \examples{
 \donttest{
 library(CohortConstructor)
-cdm <- mockCohortConstructor(drugExposure = TRUE)
+if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+cdm <- mockCohortConstructor()
+
 cdm$cohort1 |>
   requireTableIntersect(tableName = "drug_exposure",
                             indexDate = "cohort_start_date",
                             window = c(-Inf, 0))
+}
 }
 }

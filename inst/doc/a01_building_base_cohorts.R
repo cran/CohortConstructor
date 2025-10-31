@@ -7,20 +7,16 @@ message = FALSE,
 comment = "#>"
 )
 
-library(CDMConnector)
-requireEunomia()
-
 ## -----------------------------------------------------------------------------
-library(CDMConnector)
+library(omock)
 library(CodelistGenerator)
 library(PatientProfiles)
 library(CohortConstructor)
 library(dplyr)
+library(CDMConnector)
+library(duckdb)
 
-con <- DBI::dbConnect(duckdb::duckdb(), 
-                      dbdir = eunomiaDir())
-cdm <- cdmFromCon(con, cdmSchema = "main", writeSchema = "main", 
-                  writePrefix = "my_study_")
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## -----------------------------------------------------------------------------
 drug_codes <- getDrugIngredientCodes(cdm, 
@@ -84,7 +80,7 @@ cdm$drugs_extend |>
 cdm$celecoxib <- conceptCohort(cdm, 
                            conceptSet = list(celecoxib = 44923712),
                            name = "celecoxib", 
-                           inObservation = FALSE, 
+                           useRecordsBeforeObservation = TRUE, 
                            useSourceFields = TRUE)
 cdm$celecoxib |>
   glimpse()
@@ -131,44 +127,45 @@ attrition(cdm$working_age_cohort_0_365)
 
 
 ## ----include = FALSE----------------------------------------------------------
-cdm <- mockCohortConstructor(con = NULL)
-cdm$concept <- cdm$concept |>
-  dplyr::union_all(
-    dplyr::tibble(
-      concept_id = c(4245997, 9531, 4069590),
-      concept_name = c("Body mass index", "kilogram per square meter", "Normal"),
-      domain_id = "Measurement",
-      vocabulary_id = c("SNOMED", "UCUM", "SNOMED"),
-      standard_concept = "S",
-      concept_class_id = c("Observable Entity", "Unit", "Qualifier Value"),
-      concept_code = NA,
-      valid_start_date = NA,
-      valid_end_date = NA,
-      invalid_reason = NA
-    )
-  )
-cdm$measurement <- dplyr::tibble(
-  measurement_id = 1:6,
-  person_id = c(1, 1, 3, 1, 3, 2),
-  measurement_concept_id = c(4245997, 4245997, 4245997, 4245997, 4245997, 4245997),
-  measurement_date = as.Date(c("2009-07-01", "2000-12-11", "1999-09-08",
-                                "2015-02-19", "2016-08-22", "1965-03-10")),
-  measurement_type_concept_id = NA,
-  value_as_number = c(18, 36, 0, 29, 0, 25),
-  value_as_concept_id = c(0, 0, 4069590, 4069590, 4069590, 0),
-  unit_concept_id = c(9531, 9531, 0, 9531, 0, 9531)
-)
-cdm <- CDMConnector::copyCdmTo(
-  con = DBI::dbConnect(duckdb::duckdb()),
-  cdm = cdm, schema = "main")
+cdm <- mockVocabularyTables(concept = tibble(
+  concept_id = c(4326744, 4298393, 45770407, 8876, 4124457, 1990036),
+  concept_name = c("Blood pressure", "Systemic blood pressure",
+                   "Baseline blood pressure", "millimeter mercury column",
+                   "Normal range", "Overweight"),
+  domain_id = "Measurement",
+  vocabulary_id = c("SNOMED", "SNOMED", "SNOMED", "UCUM", "SNOMED", "SNOMED"),
+  standard_concept = "S",
+  concept_class_id = c("Observable Entity", "Observable Entity",
+                       "Observable Entity", "Unit", "Qualifier Value", "Qualifier Value"),
+  concept_code = NA_character_,
+  valid_start_date = as.Date(NA_character_),
+  valid_end_date = as.Date(NA_character_),
+  invalid_reason = NA_character_
+)) |>
+  mockCdmFromTables(tables = list(
+    measurement = tibble(
+      measurement_id = 1:5L,
+      person_id = c(1L, 1L, 2L, 3L, 2L),
+      measurement_concept_id = c(4326744L, 4298393L, 4298393L, 4245997L, 4245997L),
+      measurement_date = as.Date(c("2000-07-01", "2000-12-11", "2002-09-08", "2015-02-19", "2002-09-08")),
+      measurement_type_concept_id = 0L,
+      value_as_number = c(100, 125, NA, NA, NA),
+      value_as_concept_id = c(0L, 0L, 0L, 4124457L, 4328749L),
+      unit_concept_id = c(8876L, 8876L, 0L, 0L, 0L)
+   )
+ ))
+
+# copy the datatbase to duckdb
+src <- dbSource(con = dbConnect(drv = duckdb()), writeSchema = "main")
+cdm <- insertCdmTo(cdm = cdm, to = src)
 
 ## -----------------------------------------------------------------------------
 cdm$cohort <- measurementCohort(
   cdm = cdm,
   name = "cohort",
-  conceptSet = list("bmi_normal" = c(4245997)),
-  valueAsConcept = c(4069590),
-  valueAsNumber = list("9531" = c(18, 25))
+  conceptSet = list("bmi" = c(4245997)),
+  valueAsConcept = list("bmi_normal" = c(4069590), "bmi_overweight" = c(1990036)),
+  valueAsNumber = list("bmi_normal" = list("9531" = c(18, 25)), "bmi_overweight" = list("9531" = c(26, 30)))
 )
 
 attrition(cdm$cohort)
@@ -179,10 +176,10 @@ cdm$cohort
 cdm$cohort <- measurementCohort(
   cdm = cdm,
   name = "cohort",
-  conceptSet = list("bmi_normal" = c(4245997)),
-  valueAsConcept = c(4069590),
-  valueAsNumber = list("9531" = c(18, 25)),
-  inObservation = FALSE
+  conceptSet = list("bmi" = c(4245997)),
+  valueAsConcept = list("bmi_normal" = c(4069590)),
+  valueAsNumber = list("bmi_normal" = list("9531" = c(18, 25))),
+  useRecordsBeforeObservation = TRUE
 )
 
 attrition(cdm$cohort)
@@ -190,10 +187,8 @@ settings(cdm$cohort)
 cdm$cohort
 
 ## ----include=FALSE------------------------------------------------------------
-con <- DBI::dbConnect(duckdb::duckdb(), 
-                      dbdir = eunomiaDir())
-cdm <- cdmFromCon(con, cdmSchema = "main", writeSchema = "main", 
-                  writePrefix = "my_study_")
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
+
 cdm$drugs <- conceptCohort(cdm, 
                            conceptSet = drug_codes,
                            exit = "event_end_date",

@@ -18,22 +18,22 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#' cdm <- mockCohortConstructor(tables = list(
-#' "cohort" = dplyr::tibble(
-#'   cohort_definition_id = 1,
-#'   subject_id = c(1, 2, 3, 4),
-#'   cohort_start_date = as.Date(c("2000-06-03", "2000-01-01", "2015-01-15", "2000-12-09")),
-#'   cohort_end_date = as.Date(c("2001-09-01", "2001-01-12", "2015-02-15", "2002-12-09")),
-#'   date_1 = as.Date(c("2001-08-01", "2001-01-01", "2015-01-15", "2002-12-09")),
-#'   date_2 = as.Date(c("2001-08-01", NA, "2015-04-15", "2002-12-09"))
-#' )
-#' ))
-#' cdm$cohort |> exitAtFirstDate(dateColumns = c("date_1", "date_2"))
+#' library(PatientProfiles)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
+#'
+#' cdm$cohort1 <- cdm$cohort1 |>
+#'   addTableIntersectDate(tableName = "observation", nameStyle = "next_obs", order = "first") |>
+#'   addFutureObservation(futureObservationType = "date", name = "cohort1")
+#'
+#' cdm$cohort1 |>
+#'   exitAtFirstDate(dateColumns = c("next_obs", "future_observation"))
+#' }
 #' }
 exitAtFirstDate <- function(cohort,
                             dateColumns,
                             cohortId = NULL,
-                            returnReason = TRUE,
+                            returnReason = FALSE,
                             keepDateColumns = TRUE,
                             name = tableName(cohort),
                             .softValidation = FALSE) {
@@ -71,22 +71,22 @@ exitAtFirstDate <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#' cdm <- mockCohortConstructor(tables = list(
-#' "cohort" = dplyr::tibble(
-#'   cohort_definition_id = 1,
-#'   subject_id = c(1, 2, 3, 4),
-#'   cohort_start_date = as.Date(c("2000-06-03", "2000-01-01", "2015-01-15", "2000-12-09")),
-#'   cohort_end_date = as.Date(c("2001-09-01", "2001-01-12", "2015-02-15", "2002-12-09")),
-#'   date_1 = as.Date(c("2001-08-01", "2001-01-01", "2015-01-15", "2002-12-09")),
-#'   date_2 = as.Date(c("2001-08-01", NA, "2015-04-15", "2002-12-09"))
-#' )
-#' ))
-#' cdm$cohort |> exitAtLastDate(dateColumns = c("date_1", "date_2"))
+#' library(PatientProfiles)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
+#'
+#' cdm$cohort1 <- cdm$cohort1 |>
+#'   addTableIntersectDate(tableName = "observation", nameStyle = "next_obs", order = "first") |>
+#'   addFutureObservation(futureObservationType = "date", name = "cohort1")
+#'
+#' cdm$cohort1 |>
+#'   exitAtLastDate(dateColumns = c("next_obs", "future_observation"))
+#' }
 #' }
 exitAtLastDate <- function(cohort,
                            dateColumns,
                            cohortId = NULL,
-                           returnReason = TRUE,
+                           returnReason = FALSE,
                            keepDateColumns = TRUE,
                            name = tableName(cohort),
                            .softValidation = FALSE) {
@@ -117,7 +117,7 @@ exitAtColumnDate <- function(cohort,
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
-  validateCohortColumn(dateColumns, cohort, "Date")
+  validateCohortColumn(dateColumns, cohort, "date")
   omopgenerics::assertLogical(returnReason, length = 1)
   ids <- omopgenerics::settings(cohort)$cohort_definition_id
   omopgenerics::assertLogical(.softValidation)
@@ -191,21 +191,52 @@ exitAtColumnDate <- function(cohort,
     ) |>
     dplyr::filter(.data$new_date_0123456789 == !!atDateFunction) |>
     dplyr::ungroup() |>
-    dplyr::group_by(dplyr::across(!dplyr::all_of(reason))) |>
-    dplyr::arrange(.data[[reason]]) |>
-    dplyr::summarise(!!reason := stringr::str_flatten(.data[[reason]], collapse = '; '),
-                     .groups = "drop") |>
+    dplyr::compute(
+      name = tmpNewCohort, temporary = FALSE,
+      logPrefix = "CohortConstructor_exitAtColumnDate_newDate_1_"
+    )
+
+  if (returnReason) {
+    if (omopgenerics::sourceType(cdm) == "spark") {
+      newCohort <- newCohort |>
+        dplyr::group_by(dplyr::across(!dplyr::all_of(reason))) |>
+        dplyr::arrange(.data[[reason]]) |>
+        dplyr::summarise(
+          !!reason := dplyr::sql(paste0("CONCAT_WS(', ', COLLECT_LIST(", reason, "))")),
+          .groups = "drop"
+        ) |>
+        dplyr::compute(
+          name = tmpNewCohort, temporary = FALSE,
+          logPrefix = "CohortConstructor_exitAtColumnDate_newDate_1_"
+        )
+    } else {
+      newCohort <- newCohort |>
+        dplyr::group_by(dplyr::across(!dplyr::all_of(reason))) |>
+        dplyr::arrange(.data[[reason]]) |>
+        dplyr::summarise(
+          !!reason := stringr::str_flatten(.data[[reason]], collapse = '; '),
+          .groups = "drop"
+        ) |>
+        dplyr::compute(
+          name = tmpNewCohort, temporary = FALSE,
+          logPrefix = "CohortConstructor_exitAtColumnDate_newDate_1_"
+        )
+    }
+    excludeReason <- NULL
+  } else {
+    excludeReason <- reason
+  }
+
+  newCohort <- newCohort |>
     dplyr::mutate(!!newDate := .data$new_date_0123456789, !!keptDate := .data[[paste0(keptDate, "_0123456789")]]) |>
-    dplyr::select(
-      !c(
-        "new_date_0123456789",
-        "cohort_end_date_0123456789",
-        "cohort_start_date_0123456789"
-      )
-    ) |>
+    dplyr::select(!dplyr::all_of(c(
+      "new_date_0123456789", "cohort_end_date_0123456789", "cohort_start_date_0123456789", excludeReason
+    ))) |>
     dplyr::distinct() |>
-    dplyr::compute(name = tmpNewCohort, temporary = FALSE,
-                   logPrefix = "CohortConstructor_exitAtColumnDate_newDate_1_")
+    dplyr::compute(
+      name = tmpNewCohort, temporary = FALSE,
+      logPrefix = "CohortConstructor_exitAtColumnDate_newDate_1_"
+    )
 
   # checks with informative errors
   if (isFALSE(.softValidation)) {
@@ -217,16 +248,12 @@ exitAtColumnDate <- function(cohort,
     newCohort <- newCohort |>
       # join non modified cohorts
       dplyr::union_all(
-        cdm[[tmpUnchanged]] |>
-          dplyr::select(!dplyr::all_of(dateColumns)) |>
-          dplyr::mutate(!!reason := !!newDate)
+        cdm[[tmpUnchanged]]  |>
+          dplyr::mutate(!!reason := !!newDate) |>
+          dplyr::select(!dplyr::all_of(c(dateColumns, excludeReason)))
       ) |>
       dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                      logPrefix = "CohortConstructor_exitAtColumnDate_union_")
-  }
-
-  if (!returnReason) {
-    newCohort <- newCohort |> dplyr::select(!dplyr::all_of(reason))
   }
 
   if (keepDateColumns) {

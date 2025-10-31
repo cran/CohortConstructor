@@ -14,9 +14,10 @@
 #'
 #' @examples
 #' \donttest{
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' library(CohortConstructor)
 #'
-#' cdm <- mockCohortConstructor(death = TRUE)
+#' cdm <- mockCohortConstructor()
 #'
 #' # Generate a death cohort
 #' death_cohort <- deathCohort(cdm, name = "death_cohort")
@@ -30,7 +31,7 @@
 #' # Generate a death cohort, restricted to individuals in 'my_cohort'
 #' death_cohort <- deathCohort(cdm, name = "death_cohort", subsetCohort = "my_cohort")
 #' death_cohort |> attrition()
-#'
+#' }
 #' }
 deathCohort <- function(
     cdm,
@@ -84,7 +85,10 @@ deathCohort <- function(
   }
 
   cli::cli_inform(c("i" = "Applying cohort requirements."))
-  cdm[[name]] <- fulfillCohortReqs(cdm, name, inObservation = TRUE, type = "start", useIndexes)
+  cdm[[name]] <- fulfillCohortReqs(cdm, name,
+                                   useRecordsBeforeObservation = FALSE,
+                                   type = "start",
+                                   useIndexes)
 
   if (!is.na(subsetCohort)){
     if (!is.na(subsetCohortId)){

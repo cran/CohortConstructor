@@ -344,25 +344,21 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 us to add a cohort of interest to a cdm reference. When our cdm
 reference is to tables in a database, as is often the code, our R code
 will have been translated to SQL that is run against tables in the
-databases (for more details on how this is all implemented see <a href="https://oxford-pharmacoepi.github.io/Tidy-R-programming-with-OMOP/" class="uri">https://oxford-pharmacoepi.github.io/Tidy-R-programming-with-OMOP/</a>).</p>
+databases (for more details on how this is all implemented see <a href="https://ohdsi.github.io/Tidy-R-programming-with-OMOP/" class="uri">https://ohdsi.github.io/Tidy-R-programming-with-OMOP/</a>).</p>
 <p>Let’s again work with Eunomia and get the codes needed to create a
 set of drug cohorts.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(CDMConnector)</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(omock)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CodelistGenerator)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(PatientProfiles)</span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>                      <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writeSchema =</span> <span class="st">&quot;main&quot;</span>, </span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>                  <span class="at">writePrefix =</span> <span class="st">&quot;my_study_&quot;</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>drug_codes <span class="ot">&lt;-</span> <span class="fu">getDrugIngredientCodes</span>(cdm, </span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>                                     <span class="at">name =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen&quot;</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>                                              <span class="st">&quot;amoxicillin&quot;</span>, </span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>                                              <span class="st">&quot;diclofenac&quot;</span>, </span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>                                              <span class="st">&quot;simvastatin&quot;</span>,</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>                                              <span class="st">&quot;warfarin&quot;</span>))</span></code></pre></div>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockCdmFromDataset</span>(<span class="at">datasetName =</span> <span class="st">&quot;GiBleed&quot;</span>, <span class="at">source =</span> <span class="st">&quot;duckdb&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>drug_codes <span class="ot">&lt;-</span> <span class="fu">getDrugIngredientCodes</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">cdm =</span> cdm, </span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="at">name =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;amoxicillin&quot;</span>, <span class="st">&quot;diclofenac&quot;</span>, <span class="st">&quot;simvastatin&quot;</span>, <span class="st">&quot;warfarin&quot;</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>)</span></code></pre></div>
 <p>To capture all the SQL executed as we use CohortConstructor functions
 we can set a global option. For this, we just need to point to a
 directory in which we’ll save each SQL statement run behind the scenes.

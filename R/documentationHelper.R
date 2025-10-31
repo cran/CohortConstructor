@@ -114,7 +114,7 @@ NULL
 #' @param targetCohortId Vector of cohort definition ids to include.
 #' @param tableName Name of the table to check for intersect.
 #' @param inObservation If TRUE only records inside an observation period will
-#' be considered.
+#' be considered
 #'
 #' @name requireIntersectDoc
 #' @keywords internal
@@ -174,13 +174,14 @@ NULL
 #' @keywords internal
 NULL
 
-#' Helper for consistent documentation of `padObservation`.
+#' Helper for consistent documentation of `requireFullContribution`.
 #'
-#' @param padObservation Whether to pad observations if they are outside
-#' observation_period (TRUE) or drop the records if they are outside
-#' observation_period (FALSE)
+#' @param requireFullContribution Whether to require individuals to contribute all
+#' required days. If TRUE, those individuals for which adding days would take
+#' them out of observation will be dropped. If FALSE, days will only be added
+#' up to the day when the individual leaves observation.
 #'
-#' @name padObservationDoc
+#' @name requireFullContributionDoc
 #' @keywords internal
 NULL
 
@@ -194,5 +195,26 @@ NULL
 #' cohort entries
 #'
 #' @name softValidationDoc
+#' @keywords internal
+NULL
+
+#' Helper for consistent documentation of `conceptCohort` and `measurementCohort`.
+#'
+#' @param useRecordsBeforeObservation If FALSE, only records in observation will
+#' be used. If TRUE, records before the start of observation period will be
+#' considered, with cohort start date set as the start date of the
+#' individuals next observation period (as cohort records must be within
+#' observation).
+#' @param useSourceFields If TRUE, the source concept_id fields will also be
+#' used when identifying relevant clinical records. If FALSE, only the standard
+#' concept_id fields will be used.
+#' @param subsetCohort  A character refering to a cohort table containing
+#' individuals for whom cohorts will be generated. Only individuals in this
+#' table will appear in the generated cohort.
+#' @param subsetCohortId Optional. Specifies cohort IDs from the `subsetCohort`
+#' table to include. If none are provided, all cohorts from the `subsetCohort`
+#' are included.
+#'
+#' @name baseCohortDoc
 #' @keywords internal
 NULL

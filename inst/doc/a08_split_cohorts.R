@@ -9,28 +9,15 @@ knitr::opts_chunk$set(
   eval = NOT_CRAN
 )
 
-library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-downloadEunomiaData()  
-}
-
-
 ## -----------------------------------------------------------------------------
-# library(duckdb)
-# library(CDMConnector)
+# library(omock)
 # library(PatientProfiles)
 # library(CohortConstructor)
 # library(dplyr, warn.conflicts = FALSE)
 # library(clock)
 
 ## -----------------------------------------------------------------------------
-# requireEunomia(datasetName = "GiBleed")
-# con <- dbConnect(drv = duckdb(), dbdir = eunomiaDir())
-# cdm <- cdmFromCon(
-#   con = con, cdmSchema = "main", writeSchema = "main", writePrefix = "my_study_"
-# )
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## -----------------------------------------------------------------------------
 # cdm$medications <- conceptCohort(cdm = cdm,
@@ -44,14 +31,12 @@ downloadEunomiaData()
 # cdm$medications_female <- cdm$medications |>
 #   requireSex(sex = "Female", name = "medications_female") |>
 #   renameCohort(
-#     cohortId = c("acetaminophen", "diclofenac"),
-#     newCohortName = c("acetaminophen_female", "diclofenac_female")
+#     newCohortName = "{cohort_name}_female"
 #   )
 # cdm$medications_male <- cdm$medications |>
 #   requireSex(sex = "Male", name = "medications_male") |>
 #   renameCohort(
-#     cohortId = c("acetaminophen", "diclofenac"),
-#     newCohortName = c("acetaminophen_male", "diclofenac_male")
+#     newCohortName = "{cohort_name}_male"
 #   )
 # cdm <- bind(cdm$medications_female, cdm$medications_male, name = "medications_sex")
 # cohortCount(cdm$medications_sex)
@@ -110,8 +95,5 @@ downloadEunomiaData()
 
 ## -----------------------------------------------------------------------------
 # cdm$medications_year |>
-#   dplyr::filter(subject_id == 4383)
-
-## -----------------------------------------------------------------------------
-# cdmDisconnect(cdm)
+#   filter(subject_id == 4383)
 

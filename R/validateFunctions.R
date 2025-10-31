@@ -5,12 +5,7 @@ validateCohortColumn <- function(columns, cohort, class = NULL) {
       cli::cli_abort("{column} must be a column in the cohort table.")
     }
     if (!is.null(class)) {
-      if (!any(cohort |>
-               dplyr::pull(!!column) |>
-               class() |>
-               unique() %in% class)) {
-        cli::cli_abort("{column} must be a column of class {class} in the cohort table.")
-      }
+      omopgenerics::validateColumn(column = column, x = cohort, type = class)
     }
   }
   return(invisible(columns))
@@ -29,6 +24,16 @@ validateDateRange <- function(dateRange) {
     }
   }
   return(invisible(dateRange))
+}
+
+validateDaysInCohort <- function(daysInCohort) {
+omopgenerics::assertNumeric(daysInCohort, length = 2)
+omopgenerics::assertNumeric(daysInCohort[1], min = 1)
+omopgenerics::assertNumeric(daysInCohort[2], min = 1)
+if(daysInCohort[1] > daysInCohort[2]){
+cli::cli_abort("First value for daysInCohort cannot be larger than second")
+}
+daysInCohort
 }
 
 validateDemographicRequirements <- function(ageRange,
@@ -105,31 +110,36 @@ validateStrata <- function(strata, cohort) {
 }
 
 validateValueAsNumber <- function(valueAsNumber) {
+  # a named list of lists: out list name indicates cohort name
+  # inner list name indicates unit concept id (optional) and value
+  # must be a length-2 numeric vector indicating a range
 
-  omopgenerics::assertList(valueAsNumber,
-                           class = c("integer", "numeric"),
-                           null = TRUE
-  )
+  omopgenerics::assertList(valueAsNumber, null = TRUE, named = TRUE)
 
-  # if any is named all must be
-  if(is.null(names(valueAsNumber)) || any(nchar(names(valueAsNumber)) == 0)){
-    omopgenerics::assertList(valueAsNumber,
-                             length = 1,
-                             null = TRUE,
-                             msg = "If any valueAsNumber has no unit specified, only one range should be specified"
+  for (innerList in names(valueAsNumber)) {
+    # check inner lists are well defined:
+    omopgenerics::assertList(
+      valueAsNumber[[innerList]], class = c("integer", "numeric"), null = TRUE,
+      msg = "`valueAsNumber` must be indicate by a length-2 numeric vecor indicating a range. See examples."
     )
+    for (i in seq_along(valueAsNumber[[innerList]])) {
+      if (length(valueAsNumber[[innerList]][[i]]) != 2) {
+        cli::cli_abort("Each numeric vector in `valueAsNumber` list must be of length 2.")
+      }
+      if (valueAsNumber[[innerList]][[i]][1] > valueAsNumber[[innerList]][[i]][2]) {
+        cli::cli_abort(
+          "Upper `valueAsNumber` value must be equal or higher than lower `valueAsNumber` value."
+        )
+      }
+    }
   }
+}
 
-  for (i in seq_along(valueAsNumber)) {
-    if (length(valueAsNumber[[i]]) != 2) {
-      cli::cli_abort("Each numeric vector in `valueAsNumber` list must be of length 2.")
-    }
-    if (valueAsNumber[[i]][1] > valueAsNumber[[i]][2]) {
-      cli::cli_abort(
-        "Upper `valueAsNumber` value must be equal or higher than lower `valueAsNumber` value."
-      )
-    }
-  }
+validateValueAsConcept <- function(valueAsConcept) {
+  omopgenerics::assertList(
+    valueAsConcept, null = TRUE, named = TRUE, class = c("integer", "numeric"),
+    msg = "`valueAsConcept` must be a named list of concepts ids, names indicating the cohort name, and the numeric vector indicating concepts ids to use as value."
+  )
 }
 
 validateN <- function(n) {
@@ -138,23 +148,38 @@ validateN <- function(n) {
   )
 }
 
-validateIntersections <- function(intersections) {
+validateIntersections <- function(intersections, name = "intersections", targetCohort = NULL, targetCohortId = NULL) {
+
+  if(name == "cohortCombinationCriteria" & is.character(intersections)){
+    omopgenerics::assertChoice(intersections, choices = c("any", "all"), length = 1)
+      if(intersections == "any"){
+        intersections <- c(1, Inf)
+      } else if(intersections == "all"){
+      intersections <- omopgenerics::settings(targetCohort) |>
+        dplyr::filter(.data$cohort_definition_id %in% .env$targetCohortId) |>
+        dplyr::pull("cohort_definition_id") |>
+        length()
+      } else {
+      cli::cli_abort("Only supported character inputs are 'all' and 'any' but {intersections} supplied")
+    }
+    }
+
   if (length(intersections) == 1) {
     intersections <- c(intersections, intersections)
   }
   if (length(intersections) != 2) {
-    cli::cli_abort("intersections must be of length 1 or 2, but is length {length(intersections)}")
+    cli::cli_abort("`{name}` must be of length 1 or 2, but is length {length(intersections)}")
   }
   if (intersections[1] < 0) {
     cli::cli_abort(
-      "intersections lower limit must be equal or greater than zero but is {intersections[[1]]}"
+      "`{name}` lower limit must be equal or greater than zero but is {intersections[[1]]}"
     )
   }
   if (intersections[1] > intersections[2]) {
-    cli::cli_abort("Second value for intersections must be equal or greater than the first")
+    cli::cli_abort("Second value for `{name}` must be equal or greater than the first")
   }
   if (intersections[1] == Inf) {
-    cli::cli_abort("First value for intersections cannot be Inf")
+    cli::cli_abort("First value for `{name}` cannot be Inf")
   }
 
   return(invisible(intersections))

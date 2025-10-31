@@ -9,41 +9,17 @@ knitr::opts_chunk$set(
   eval = NOT_CRAN
 )
 
-library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-downloadEunomiaData()  
-}
-
-
 ## ----setup--------------------------------------------------------------------
+# library(omock)
+# library(dplyr)
 # library(CodelistGenerator)
 # library(CohortConstructor)
 # library(CohortCharacteristics)
 # library(visOmopResults)
 # library(ggplot2)
 
-## ----include = FALSE----------------------------------------------------------
-# knitr::opts_chunk$set(
-#   collapse = TRUE,
-#   eval = TRUE, message = FALSE, warning = FALSE,
-#   comment = "#>"
-# )
-# 
-# library(CDMConnector)
-# library(dplyr, warn.conflicts = FALSE)
-# 
-# if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-#   Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-# if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-#   downloadEunomiaData()
-# }
-
 ## -----------------------------------------------------------------------------
-# con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-# cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main",
-#                     writeSchema = "main", writePrefix = "my_study_")
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## -----------------------------------------------------------------------------
 # warfarin_codes <- getDrugIngredientCodes(cdm, "warfarin")
@@ -79,6 +55,55 @@ downloadEunomiaData()
 #                          name = "warfarin_no_gi_bleed")
 # 
 # summary_attrition <- summariseCohortAttrition(cdm$warfarin_no_gi_bleed)
+# plotCohortAttrition(summary_attrition)
+
+## -----------------------------------------------------------------------------
+# cdm$injuries <- conceptCohort(
+#   cdm = cdm,
+#   name = "injuries",
+#   conceptSet = list(
+#     "ankle_sprain" = 81151,
+#     "ankle_fracture" = 4059173,
+#     "forearm_fracture" = 4278672,
+#     "hip_fracture" = 4230399
+#   ),
+#   exit = "event_start_date"
+# )
+# 
+# 
+# cdm$warfarin_any_injury <- cdm$warfarin |>
+#   requireCohortIntersect(intersections = c(1, Inf),
+#                          cohortCombinationCriteria = "any",
+#                          targetCohortTable = "injuries",
+#                          indexDate = "cohort_start_date",
+#                          window = c(-Inf, 0),
+#                          name = "warfarin_any_injury")
+# 
+# summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
+# plotCohortAttrition(summary_attrition)
+
+## -----------------------------------------------------------------------------
+# cdm$warfarin_any_injury <- cdm$warfarin |>
+#   requireCohortIntersect(intersections = c(1, Inf),
+#                          cohortCombinationCriteria = "all",
+#                          targetCohortTable = "injuries",
+#                          indexDate = "cohort_start_date",
+#                          window = c(-Inf, 0),
+#                          name = "warfarin_any_injury")
+# 
+# summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
+# plotCohortAttrition(summary_attrition)
+
+## -----------------------------------------------------------------------------
+# cdm$warfarin_any_injury <- cdm$warfarin |>
+#   requireCohortIntersect(intersections = c(1, Inf),
+#                          cohortCombinationCriteria = c(2, Inf),
+#                          targetCohortTable = "injuries",
+#                          indexDate = "cohort_start_date",
+#                          window = c(-Inf, 0),
+#                          name = "warfarin_any_injury")
+# 
+# summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
 # plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------

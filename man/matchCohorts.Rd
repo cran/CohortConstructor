@@ -60,7 +60,8 @@ for this cohort).
 \donttest{
 library(CohortConstructor)
 library(dplyr)
-cdm <- mockCohortConstructor(nPerson = 200)
+if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+cdm <- mockCohortConstructor()
 cdm$new_matched_cohort <- cdm$cohort2 |>
   matchCohorts(
     name = "new_matched_cohort",
@@ -69,5 +70,6 @@ cdm$new_matched_cohort <- cdm$cohort2 |>
     matchYearOfBirth = TRUE,
     ratio = 1)
 cdm$new_matched_cohort
+}
 }
 }

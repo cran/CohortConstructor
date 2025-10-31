@@ -8,7 +8,6 @@
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
 #' @param entryRange Range for entries to include.
-#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -16,21 +15,21 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 <- requireIsEntry(cdm$cohort1, c(1, Inf))
+#' }
 #' }
 #'
 requireIsEntry <- function(cohort,
                            entryRange,
                            cohortId = NULL,
-                           name = tableName(cohort),
-                           .softValidation = TRUE) {
+                           name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
-  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -60,7 +59,7 @@ requireIsEntry <- function(cohort,
     cohort <- cohort |>
       dplyr::compute(name = name, temporary = FALSE,
                      logPrefix = "CohortConstructor_requireIsEntry_restrict_") |>
-      omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+      omopgenerics::newCohortTable(.softValidation = TRUE) |>
       omopgenerics::recordCohortAttrition(
         "Restricted to entries between {minEntry} and {maxEntry}",
         cohortId = cohortId
@@ -105,7 +104,7 @@ requireIsEntry <- function(cohort,
     dplyr::select(!"entry") |>
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_requireIsEntry_select_") |>
-    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition(
       "Restricted to entries between {minEntry} and {maxEntry}",
       cohortId = cohortId
@@ -133,7 +132,6 @@ requireIsEntry <- function(cohort,
 #' @inheritParams cohortDoc
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -141,20 +139,19 @@ requireIsEntry <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 <- requireIsFirstEntry(cdm$cohort1)
 #' }
-#'
+#' }
 requireIsFirstEntry <- function(cohort,
                                 cohortId = NULL,
-                                name = tableName(cohort),
-                                .softValidation = TRUE) {
+                                name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
-  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -185,7 +182,7 @@ requireIsFirstEntry <- function(cohort,
       name = name, temporary = FALSE,
       logPrefix = "CohortConstructor_requireIsFirstEntry_min_"
     ) |>
-    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition("Restricted to first entry",
                                         cohortId = cohortId)
 
@@ -209,7 +206,6 @@ requireIsFirstEntry <- function(cohort,
 #' @inheritParams cohortDoc
 #' @inheritParams cohortIdModifyDoc
 #' @inheritParams nameDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table in a cdm reference.
 #' @export
@@ -217,20 +213,20 @@ requireIsFirstEntry <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 <- requireIsLastEntry(cdm$cohort1)
+#' }
 #' }
 #'
 requireIsLastEntry <- function(cohort,
                                cohortId = NULL,
-                               name = tableName(cohort),
-                               .softValidation = TRUE) {
+                               name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
-  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning entry cohort as `cohortId` is not valid.")
@@ -261,7 +257,7 @@ requireIsLastEntry <- function(cohort,
       name = name, temporary = FALSE,
       logPrefix = "CohortConstructor_requireIsLastEntry_max_"
     ) |>
-    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition("Restricted to last entry", cohortId = cohortId)
 
   useIndexes <- getOption("CohortConstructor.use_indexes")

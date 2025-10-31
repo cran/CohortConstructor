@@ -11,7 +11,6 @@
 #' @inheritParams windowDoc
 #' @inheritParams nameDoc
 #' @inheritParams atFirstDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
 #'
@@ -20,11 +19,14 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#' cdm <- mockCohortConstructor(drugExposure = TRUE)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
+#'
 #' cdm$cohort1 |>
 #'   requireTableIntersect(tableName = "drug_exposure",
 #'                             indexDate = "cohort_start_date",
 #'                             window = c(-Inf, 0))
+#' }
 #' }
 requireTableIntersect <- function(cohort,
                                   tableName,
@@ -37,18 +39,16 @@ requireTableIntersect <- function(cohort,
                                   inObservation = TRUE,
                                   censorDate = NULL,
                                   atFirst = FALSE,
-                                  name = tableName(cohort),
-                                  .softValidation = TRUE) {
+                                  name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  validateCohortColumn(indexDate, cohort, class = "Date")
+  validateCohortColumn(indexDate, cohort, class = "date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   window <- omopgenerics::validateWindowArgument(window)
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   intersections <- validateIntersections(intersections)
   omopgenerics::assertCharacter(tableName)
-  omopgenerics::assertLogical(.softValidation, length = 1)
   omopgenerics::assertLogical(atFirst, length = 1)
 
   if (length(cohortId) == 0) {
@@ -132,7 +132,7 @@ requireTableIntersect <- function(cohort,
       name = name, temporary = FALSE,
       logPrefix = "CohortConstructor_requireTableIntersect_name_"
     ) |>
-    omopgenerics::newCohortTable(.softValidation = .softValidation) |>
+    omopgenerics::newCohortTable(.softValidation = TRUE) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
   omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))

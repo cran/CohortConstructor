@@ -356,7 +356,7 @@ DrugUtilisation package to create mock data.</p>
 <p>As we will use <code>cohort1</code> to explore
 <code>matchCohorts()</code>, let us first use <code>settings()</code>
 from omopgenerics package to explore this cohort:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">settings</span>(cdm<span class="sc">$</span>cohort1)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>cohort1)</span></code></pre></div>
 </div>
 </div>
 <div id="use-matchcohorts-to-create-an-age-sex-matched-cohort" class="section level1">
@@ -373,7 +373,7 @@ matched cohort for <code>cohort_definition_id = 1</code>.</p>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">cohortId =</span> <span class="dv">1</span>,</span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;matched_cohort1&quot;</span>)</span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">settings</span>(cdm<span class="sc">$</span>matched_cohort1)</span></code></pre></div>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>matched_cohort1)</span></code></pre></div>
 <p>Notice that in the generated tibble, there are two cohorts:
 <code>cohort_definition_id = 1</code> (original cohort), and
 <code>cohort_definition_id = 4</code> (matched cohort).
@@ -387,10 +387,10 @@ is the cohort_id of the original cohort.</p>
 <p>Check the exclusion criteria applied to generate the new cohorts by
 using <code>attrition()</code> from omopgenerics package:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Original cohort</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># Matched cohort</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">4</span>)</span></code></pre></div>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">attrition</span>(cdm<span class="sc">$</span>matched_cohort1) <span class="sc">|&gt;</span> <span class="fu">filter</span>(cohort_definition_id <span class="sc">==</span> <span class="dv">4</span>)</span></code></pre></div>
 <p>Briefly, from the original cohort, we exclude first those individuals
 that do not have a match, and then individuals that their matching pair
 is not in observation during the assigned <em>cohort_start_date</em>.
@@ -421,9 +421,9 @@ cohort.</p>
 <div id="ratio-parameter" class="section level2">
 <h2>ratio parameter</h2>
 <p>The default matching ratio is 1:1 (<code>ratio = 1</code>). Use
-<code>cohortCount()</code> from CDMConnector to check if the matching
-has been done as desired.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort1)</span></code></pre></div>
+<code>cohortCount()</code> to check if the matching has been done as
+desired.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort1)</span></code></pre></div>
 <p>You can modify the <code>ratio</code> parameter to tailor your
 matched cohort. <code>ratio</code> can adopt values from 1 to Inf.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>cdm<span class="sc">$</span>matched_cohort2 <span class="ot">&lt;-</span> <span class="fu">matchCohorts</span>(</span>
@@ -432,7 +432,7 @@ matched cohort. <code>ratio</code> can adopt values from 1 to Inf.</p>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;matched_cohort2&quot;</span>,</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">ratio =</span> <span class="cn">Inf</span>)</span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort2)</span></code></pre></div>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort2)</span></code></pre></div>
 </div>
 <div id="generate-matched-cohorts-simultaneously-across-multiple-cohorts" class="section level2">
 <h2>Generate matched cohorts simultaneously across multiple cohorts</h2>
@@ -446,9 +446,9 @@ are the cohorts of interest. If set to NULL, all the cohorts present in
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;matched_cohort3&quot;</span>,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">ratio =</span> <span class="dv">2</span>)</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">settings</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>omopgenerics<span class="sc">::</span><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span></code></pre></div>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>matched_cohort3) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(cohort_definition_id)</span></code></pre></div>
 <p>Notice that each cohort has their own (and independent of other
 cohorts) matched cohort.</p>
 </div>

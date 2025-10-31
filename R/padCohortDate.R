@@ -6,7 +6,7 @@
 #' @inheritParams nameDoc
 #' @inheritParams collapseDoc
 #' @inheritParams daysDoc
-#' @inheritParams padObservationDoc
+#' @inheritParams requireFullContributionDoc
 #' @param cohortDate 'cohort_start_date' or 'cohort_end_date'.
 #' @param indexDate Variable in cohort that contains the index date to add.
 #' @inheritParams softValidationDoc
@@ -17,6 +17,7 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   padCohortDate(
@@ -24,12 +25,13 @@
 #'     indexDate = "cohort_start_date",
 #'     days = 10)
 #' }
+#' }
 padCohortDate <- function(cohort,
                           days,
                           cohortDate = "cohort_start_date",
                           indexDate = "cohort_start_date",
                           collapse = TRUE,
-                          padObservation = TRUE,
+                          requireFullContribution = FALSE,
                           cohortId = NULL,
                           name = tableName(cohort),
                           .softValidation = FALSE) {
@@ -39,7 +41,7 @@ padCohortDate <- function(cohort,
       indexDate = indexDate,
       days = days,
       collapse = collapse,
-      padObservation = padObservation,
+      requireFullContribution = requireFullContribution,
       cohortId = cohortId,
       name = name,
       .softValidation = .softValidation
@@ -64,7 +66,7 @@ padCohortDate <- function(cohort,
 #' @inheritParams nameDoc
 #' @inheritParams collapseDoc
 #' @inheritParams daysDoc
-#' @inheritParams padObservationDoc
+#' @inheritParams requireFullContributionDoc
 #' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
@@ -73,15 +75,17 @@ padCohortDate <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' # add 10 days to each cohort exit
 #' cdm$cohort1 |>
 #'   padCohortEnd(days = 10)
 #' }
+#' }
 padCohortEnd <- function(cohort,
                          days,
                          collapse = TRUE,
-                         padObservation = TRUE,
+                         requireFullContribution = FALSE,
                          cohortId = NULL,
                          name = tableName(cohort),
                          .softValidation = FALSE) {
@@ -91,7 +95,7 @@ padCohortEnd <- function(cohort,
       indexDate = "cohort_end_date",
       days = days,
       collapse = collapse,
-      padObservation = padObservation,
+      requireFullContribution = requireFullContribution,
       cohortId = cohortId,
       name = name,
       .softValidation = .softValidation
@@ -113,7 +117,7 @@ padCohortEnd <- function(cohort,
 #' @inheritParams nameDoc
 #' @inheritParams collapseDoc
 #' @inheritParams daysDoc
-#' @inheritParams padObservationDoc
+#' @inheritParams requireFullContributionDoc
 #' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
@@ -122,15 +126,17 @@ padCohortEnd <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' # add 10 days to each cohort entry
 #' cdm$cohort1 |>
 #'   padCohortStart(days = 10)
 #' }
+#' }
 padCohortStart <- function(cohort,
                            days,
                            collapse = TRUE,
-                           padObservation = TRUE,
+                           requireFullContribution = FALSE,
                            cohortId = NULL,
                            name = tableName(cohort),
                            .softValidation = FALSE) {
@@ -140,7 +146,7 @@ padCohortStart <- function(cohort,
       indexDate = "cohort_start_date",
       days = days,
       collapse = collapse,
-      padObservation = padObservation,
+      requireFullContribution = requireFullContribution,
       cohortId = cohortId,
       name = name,
       .softValidation = .softValidation
@@ -152,7 +158,7 @@ padCohortStart <- function(cohort,
                            indexDate,
                            days,
                            collapse,
-                           padObservation,
+                           requireFullContribution,
                            cohortId,
                            name,
                            call = parent.frame(),
@@ -184,7 +190,7 @@ padCohortStart <- function(cohort,
   if (is.numeric(days)) {
     omopgenerics::assertNumeric(days, integerish = TRUE, length = 1, msg = msg, call = call)
     reason <- paste0(reason, round(days), " ", ifelse(days == 1, "day", "days"))
-    q <- "as.Date(local(CDMConnector::dateadd('{indexDate}', {round(days)}L)))"
+    q <- "as.Date(clock::add_days(x = .data[['{indexDate}']], n = {round(days)}L))"
 
   } else if (is.character(days)) {
     omopgenerics::assertCharacter(days, length = 1, call = call, msg = msg)
@@ -192,7 +198,7 @@ padCohortStart <- function(cohort,
     reason <- paste0(reason, "'", days, "' days")
     cohort <- cohort |>
       dplyr::mutate(!!days := as.integer(.data[[days]]))
-    q <- "as.Date(local(CDMConnector::dateadd('{indexDate}', '{days}')))"
+    q <- "as.Date(clock::add_days(x = .data[['{indexDate}']], n = {days}))"
   } else {
     cli::cli_abort(message = msg, call = call)
   }
@@ -210,7 +216,7 @@ padCohortStart <- function(cohort,
     as.character() |>
     rlang::parse_exprs() |>
     rlang::set_names(cohortDate)
-  newCohort <- newCohort %>%
+  newCohort <- newCohort |>
     dplyr::mutate(!!!q) |>
     # drop start > end
     dplyr::filter(
@@ -220,9 +226,17 @@ padCohortStart <- function(cohort,
     dplyr::compute(name = tmpNewCohort, temporary = FALSE,
                    logPrefix = "CohortConstructor_.padCohortDate_intermediate_")
 
+  useIndexes <- getOption("CohortConstructor.use_indexes")
+  if (!isFALSE(useIndexes)) {
+    addIndex(
+      cohort = newCohort,
+      cols = c("subject_id", "cohort_start_date")
+    )
+  }
+
   # solve observation
   newCohort <- newCohort |>
-    solveObservation(padObservation, tmpNewCohort, cohortDate)
+    solveObservation(requireFullContribution, tmpNewCohort, cohortDate)
 
   # solve overlap
   newCohort <- newCohort |>
@@ -259,7 +273,6 @@ padCohortStart <- function(cohort,
 
   return(newCohort)
 }
-
 validateColumn <- function(col, x, call) {
   if (!col %in% colnames(x)) {
     cli::cli_abort(c("{.var {col}} column does not exist."), call = call)
@@ -306,47 +319,58 @@ solveOverlap <- function(x, collapse, intermediate) {
   }
   return(x)
 }
-solveObservation <- function(x, padObservation, intermediate, cohortDate) {
+solveObservation <- function(x, requireFullContribution, intermediate, cohortDate) {
   idcol <- omopgenerics::uniqueId(exclude = colnames(x))
+  tablePrefix <- omopgenerics::tmpPrefix()
+  cdm <- omopgenerics::cdmReference(x)
+
   if (cohortDate == "cohort_start_date") {
-    x <- x |>
-      PatientProfiles::addPriorObservationQuery(
+    newX <- x |>
+      PatientProfiles::addPriorObservation(
         indexDate = "cohort_end_date",
         priorObservationName = idcol,
-        priorObservationType = "date"
+        priorObservationType = "date",
+        name = omopgenerics::uniqueTableName(prefix = tablePrefix)
       )
-    if (padObservation) {
-      x <- x |>
+    if (isFALSE(requireFullContribution)) {
+      newX <- newX |>
         dplyr::mutate("cohort_start_date" = dplyr::if_else(
           .data$cohort_start_date < .data[[idcol]],
           .data[[idcol]],
           .data$cohort_start_date
         ))
     } else {
-      x <- x |>
+      newX <- newX |>
         dplyr::filter(.data$cohort_start_date >= .data[[idcol]])
     }
   } else {
-    x <- x |>
-      PatientProfiles::addFutureObservationQuery(
+    newX <- x |>
+      PatientProfiles::addFutureObservation(
         indexDate = "cohort_start_date",
         futureObservationName = idcol,
-        futureObservationType = "date"
+        futureObservationType = "date",
+        name = omopgenerics::uniqueTableName(prefix = tablePrefix)
       )
-    if (padObservation) {
-      x <- x |>
+    if (isFALSE(requireFullContribution)) {
+      newX <- newX |>
         dplyr::mutate("cohort_end_date" = dplyr::if_else(
           .data$cohort_end_date > .data[[idcol]],
           .data[[idcol]],
           .data$cohort_end_date
         ))
     } else {
-      x <- x |>
+      newX <- newX |>
         dplyr::filter(.data$cohort_end_date <= .data[[idcol]])
     }
   }
-  x |>
+  newX <- newX |>
     dplyr::select(!dplyr::all_of(idcol)) |>
     dplyr::compute(name = intermediate, temporary = FALSE,
                    logPrefix = "CohortConstructor_solveObservation_")
+
+  omopgenerics::dropSourceTable(
+    cdm = cdm, name = dplyr::starts_with(tablePrefix)
+  )
+
+  newX
 }

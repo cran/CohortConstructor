@@ -35,20 +35,14 @@ We'll explore each category in the following sections.
 First, we'll connect to the Eunomia synthetic data and create a mock cohort of women in the database to use as example in the vignette.
 
 ```{r}
+library(dplyr, warn.conflicts = FALSE)
 library(CohortConstructor)
 library(CohortCharacteristics)
 library(PatientProfiles)
-library(CDMConnector)
+library(omock)
+library(clock)
 
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-downloadEunomiaData()  
-}
-
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = CDMConnector::eunomiaDir())
-cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main", 
-                    writeSchema = "main", writePrefix = "my_study_")
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 cdm$cohort <- demographicsCohort(cdm = cdm, name = "cohort", sex = "Female")
 ```
@@ -67,7 +61,7 @@ cdm$cohort_observation_end <- cdm$cohort |>
 
 As cohort entries cannot overlap, updating the end date to the observation end may result in overlapping records. In such cases, overlapping records are collapsed into a single entry (starting at the earliest entry and ending at the end of observation).
 
-This function has an argument `limitToCurrentPeriod` to consider cases when a subject may have more than one observation period. If `limitToCurrentPeriod = TRUE` (default) end date will be set to the end of the observation period where the record is registered.  If `limitToCurrentPeriod = FALSE`, in addition to updating the cohort end to the allocated observation end, cohort entries are created for each of the subsequent observation periods.
+This function has an argument `persistAcrossObservationPeriods` to consider cases when a subject may have more than one observation period. If `persistAcrossObservationPeriods = FALSE` then cohort end date will be set to the end of the observation period where the record occurs.  If `persistAcrossObservationPeriods = TRUE`, in addition to updating the cohort end to the current observation end, cohort entries are created for each of the subsequent observation periods.
 
 ### `exitAtDeath()`
 
@@ -201,7 +195,7 @@ For example, to subtract 50 days from the cohort start date:
 cdm$cohort <- cdm$cohort |> padCohortStart(days = -50, collapse = FALSE)
 ```
 
-When subtracting days, it may result in cohort start dates preceding the observation period start. By default, such entries are corrected to the observation period start. To drop these entries instead, set the `padObservation` argument to FALSE.
+When subtracting days, it may result in cohort start dates preceding the observation period start. By default, such entries are corrected to the observation period start. To drop these entries instead, set the `requireFullContribution` argument to TRUE
 
 Additionally, adjusting cohort start dates may lead to overlapping entries for the same subject. The `collapse` argument manages this: if TRUE, merges overlapping entries into a single record with the earliest start and latest end date (default), if FALSE retains only the first of the overlapping entries.
 
@@ -213,15 +207,15 @@ The example below adds 1000 days to cohort end date, while dropping records that
 
 ```{r}
 cdm$cohort_pad <- cdm$cohort |> 
-  padCohortEnd(days = 1000, padObservation = FALSE, name = "cohort_pad")
+  padCohortEnd(days = 1000, requireFullContribution = TRUE, name = "cohort_pad")
 ```
 
 Additionally, days to add can also be specified with a numeric column in the cohort, which allows to add a specific number of days for each record:
 
 ```{r}
-cdm$cohort <- cdm$cohort %>% 
-  dplyr::mutate(days_to_add = !!CDMConnector::datediff("cohort_start_date", "cohort_end_date")) |>
-  padCohortEnd(days = "days_to_add", padObservation = FALSE)
+cdm$cohort <- cdm$cohort |> 
+  dplyr::mutate(days_to_add = date_count_between(start = cohort_start_date, end = cohort_end_date, precision = "day")) |>
+  padCohortEnd(days = "days_to_add", requireFullContribution = TRUE)
 ```
 
 

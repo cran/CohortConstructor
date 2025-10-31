@@ -11,16 +11,9 @@ echo = FALSE,
 eval = NOT_CRAN
 )
 
-## ----include = FALSE----------------------------------------------------------
-# library(CDMConnector)
-# if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-# Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-# if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-# downloadEunomiaData()
-# }
-
 ## -----------------------------------------------------------------------------
 # # Packages
+# library(omock)
 # library(visOmopResults)
 # library(omopgenerics)
 # library(ggplot2)
@@ -64,16 +57,7 @@ eval = NOT_CRAN
 # }
 
 ## ----echo=TRUE----------------------------------------------------------------
-# library(CDMConnector)
-# library(CodelistGenerator)
-# library(PatientProfiles)
-# library(CohortConstructor)
-# library(dplyr)
-# 
-# con <- DBI::dbConnect(duckdb::duckdb(),
-#                       dbdir = eunomiaDir())
-# cdm <- cdmFromCon(con, cdmSchema = "main", writeSchema = "main",
-#                   writePrefix = "my_study_")
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## ----echo=TRUE----------------------------------------------------------------
 # benchmark_results <- benchmarkCohortConstructor(
@@ -87,7 +71,7 @@ eval = NOT_CRAN
 
 ## -----------------------------------------------------------------------------
 # benchmarkData$omop |>
-#   visOmopResults::formatTable() |>
+#   formatTable() |>
 #   tab_style(style = list(cell_fill(color = "#e1e1e1"), cell_text(weight = "bold")),
 #             locations = cells_column_labels()) |>
 #   tab_style(style = list(cell_text(weight = "bold")),
@@ -95,7 +79,7 @@ eval = NOT_CRAN
 
 ## -----------------------------------------------------------------------------
 # benchmarkData$details |>
-#   visOmopResults::formatTable(groupColumn = "cdm_name") |>
+#   formatTable(groupColumn = "cdm_name") |>
 #   tab_style(style = list(cell_fill(color = "#e1e1e1"), cell_text(weight = "bold")),
 #             locations = cells_column_labels()) |>
 #   tab_style(style = list(cell_text(weight = "bold")),
@@ -118,8 +102,8 @@ eval = NOT_CRAN
 #   xlab("")
 # 
 # gg$data <- gg$data |>
-#   dplyr::mutate(
-#     cohort_name_reference_cohort_name_comparator = visOmopResults::customiseText(gsub("cc_| -.*", "", cohort_name_reference_cohort_name_comparator)),
+#   mutate(
+#     cohort_name_reference_cohort_name_comparator = customiseText(gsub("cc_| -.*", "", cohort_name_reference_cohort_name_comparator)),
 #     cohort_name_reference_cohort_name_comparator = case_when(
 #       grepl("Asthma", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ "Asthma without COPD",
 #       grepl("Covid", .data[["cohort_name_reference_cohort_name_comparator"]]) ~ gsub("Covid|Covid", "COVID-19", cohort_name_reference_cohort_name_comparator),

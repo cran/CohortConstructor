@@ -8,23 +8,15 @@ knitr::opts_chunk$set(
 )
 
 ## -----------------------------------------------------------------------------
+library(omock)
 library(CodelistGenerator)
 library(CohortConstructor)
 library(CohortCharacteristics)
 library(ggplot2)
 library(dplyr)
 
-## ----include = FALSE----------------------------------------------------------
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-  Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-  CDMConnector::downloadEunomiaData()  
-}
-
 ## -----------------------------------------------------------------------------
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = CDMConnector::eunomiaDir())
-cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main", 
-                    writeSchema = "main", writePrefix = "my_study_")
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## -----------------------------------------------------------------------------
 acetaminophen_codes <- getDrugIngredientCodes(cdm, 
@@ -50,13 +42,11 @@ plotCohortAttrition(summary_attrition)
 cdm$acetaminophen <- conceptCohort(cdm = cdm, 
                                    conceptSet = acetaminophen_codes, 
                                    exit = "event_end_date",
-                                   name = "acetaminophen")
-cdm$acetaminophen <- cdm$acetaminophen |> 
-  requireIsLastEntry()
+                                   name = "acetaminophen") |> 
+  requireDuration(c(30, Inf))
 
 summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
 plotCohortAttrition(summary_attrition)
-
 
 ## -----------------------------------------------------------------------------
 cdm$acetaminophen <- conceptCohort(cdm = cdm, 
@@ -68,7 +58,6 @@ cdm$acetaminophen <- cdm$acetaminophen |>
 
 summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
 plotCohortAttrition(summary_attrition)
-
 
 ## -----------------------------------------------------------------------------
 cdm$acetaminophen <- conceptCohort(cdm = cdm, 
@@ -83,27 +72,51 @@ summary_attrition <- summariseCohortAttrition(cdm$acetaminophen)
 plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
+cdm$acetaminophen <- conceptCohort(cdm = cdm, 
+                                 conceptSet = acetaminophen_codes, 
+                                 name = "acetaminophen")
+
+## -----------------------------------------------------------------------------
+cdm$acetaminophen_one_night <- cdm$acetaminophen |> 
+  requireDuration(c(2, Inf), 
+                  name = "acetaminophen_one_night") |> 
+  renameCohort("acetaminophen_one_night")
+
+cdm <- bind(cdm$acetaminophen,
+            cdm$acetaminophen_one_night, 
+            name = "both_cohorts")
+
+## -----------------------------------------------------------------------------
+summary_attrition <- summariseCohortAttrition(cdm$both_cohorts)
+plotCohortAttrition(summary_attrition)
+
+## ----warning=FALSE------------------------------------------------------------
+summary_characteristics <- summariseCharacteristics(cdm$both_cohorts)
+tableCharacteristics(summary_characteristics |>
+                       filter(variable_name %in% c("Number subjects", "Days in cohort")))
+
+## -----------------------------------------------------------------------------
 cdm$acetaminophen_1 <- conceptCohort(cdm = cdm, 
                                  conceptSet = acetaminophen_codes, 
                                  name = "acetaminophen_1") |> 
   requireIsFirstEntry() |>
-  requireInDateRange(dateRange = as.Date(c("2010-01-01", "2016-01-01")))
+  requireInDateRange(dateRange = as.Date(c("2010-01-01", "2016-01-01"))) |> 
+  renameCohort("entry_before_date")
 
 cdm$acetaminophen_2 <- conceptCohort(cdm = cdm, 
                                  conceptSet = acetaminophen_codes, 
                                  name = "acetaminophen_2") |>
   requireInDateRange(dateRange = as.Date(c("2010-01-01", "2016-01-01"))) |> 
-  requireIsFirstEntry()
+  requireIsFirstEntry("date_before_entry")
 
 ## -----------------------------------------------------------------------------
-summary_attrition_1 <- summariseCohortAttrition(cdm$acetaminophen_1)
-summary_attrition_2 <- summariseCohortAttrition(cdm$acetaminophen_2)
+cdm <- bind(cdm$acetaminophen_1,
+            cdm$acetaminophen_2, 
+            name = "both_cohorts")
+summary_attrition <- summariseCohortAttrition(cdm$both_cohorts)
 
 ## -----------------------------------------------------------------------------
-plotCohortAttrition(summary_attrition_1)
-
-## -----------------------------------------------------------------------------
-plotCohortAttrition(summary_attrition_2)
+plotCohortAttrition(summary_attrition)
 
 ## -----------------------------------------------------------------------------
 medication_codes <- getDrugIngredientCodes(cdm = cdm, nameStyle = "{concept_name}")

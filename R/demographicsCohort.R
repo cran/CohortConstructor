@@ -9,7 +9,6 @@
 #' @inheritParams cdmDoc
 #' @inheritParams nameDoc
 #' @inheritParams requireDemographicsDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return A cohort table
 #'
@@ -17,6 +16,7 @@
 #'
 #' @examples
 #' \donttest{
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' library(CohortConstructor)
 #'
 #' cdm <- mockCohortConstructor()
@@ -35,13 +35,13 @@
 #'     minPriorObservation = 365)
 #'
 #'attrition(cohort)
+#'}
 #' }
 demographicsCohort <- function(cdm,
                                name,
                                ageRange = NULL,
                                sex = NULL,
-                               minPriorObservation = NULL,
-                               .softValidation = TRUE) {
+                               minPriorObservation = NULL) {
   # initial checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cdm <- omopgenerics::validateCdmArgument(cdm)
@@ -75,8 +75,7 @@ demographicsCohort <- function(cdm,
     ageRange = ageRange,
     sex = sex,
     minPriorObservation = minPriorObservation,
-    name = name,
-    .softValidation = .softValidation
+    name = name
   )
 
   return(cdm[[name]])

@@ -347,19 +347,14 @@ to use the <em>GiBleed</em> database to conduct the different examples.
 To make sure <em>GiBleed</em> database is available you can use the
 function <code>requireEunomia()</code> so let’s get started.</p>
 <p>Load necessary packages:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(CDMConnector)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(PatientProfiles)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(dplyr, <span class="at">warn.conflicts =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(clock)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(omock)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(PatientProfiles)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(CohortConstructor)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(dplyr, <span class="at">warn.conflicts =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(clock)</span></code></pre></div>
 <p>Create <code>cdm_reference</code> object from <em>GiBleed</em>
 database:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">requireEunomia</span>(<span class="at">datasetName =</span> <span class="st">&quot;GiBleed&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="at">drv =</span> <span class="fu">duckdb</span>(), <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>())</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">con =</span> con, <span class="at">cdmSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writeSchema =</span> <span class="st">&quot;main&quot;</span>, <span class="at">writePrefix =</span> <span class="st">&quot;my_study_&quot;</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">mockCdmFromDataset</span>(<span class="at">datasetName =</span> <span class="st">&quot;GiBleed&quot;</span>, <span class="at">source =</span> <span class="st">&quot;duckdb&quot;</span>)</span></code></pre></div>
 <p>Let’s start by creating two drug cohorts, one for users of diclofenac
 and another for users of acetaminophen.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications <span class="ot">&lt;-</span> <span class="fu">conceptCohort</span>(<span class="at">cdm =</span> cdm, </span>
@@ -376,18 +371,16 @@ function <code>requireSex()</code>:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications_female <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="fu">requireSex</span>(<span class="at">sex =</span> <span class="st">&quot;Female&quot;</span>, <span class="at">name =</span> <span class="st">&quot;medications_female&quot;</span>) <span class="sc">|&gt;</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">renameCohort</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="at">cohortId =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;diclofenac&quot;</span>), </span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="at">newCohortName =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen_female&quot;</span>, <span class="st">&quot;diclofenac_female&quot;</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  )</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>cdm<span class="sc">$</span>medications_male <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="fu">requireSex</span>(<span class="at">sex =</span> <span class="st">&quot;Male&quot;</span>, <span class="at">name =</span> <span class="st">&quot;medications_male&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="fu">renameCohort</span>(</span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>    <span class="at">cohortId =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen&quot;</span>, <span class="st">&quot;diclofenac&quot;</span>), </span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>    <span class="at">newCohortName =</span> <span class="fu">c</span>(<span class="st">&quot;acetaminophen_male&quot;</span>, <span class="st">&quot;diclofenac_male&quot;</span>)</span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  )</span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">bind</span>(cdm<span class="sc">$</span>medications_female, cdm<span class="sc">$</span>medications_male, <span class="at">name =</span> <span class="st">&quot;medications_sex&quot;</span>)</span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medications_sex)</span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>medications_sex)</span></code></pre></div>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="at">newCohortName =</span> <span class="st">&quot;{cohort_name}_female&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  )</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>cdm<span class="sc">$</span>medications_male <span class="ot">&lt;-</span> cdm<span class="sc">$</span>medications <span class="sc">|&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="fu">requireSex</span>(<span class="at">sex =</span> <span class="st">&quot;Male&quot;</span>, <span class="at">name =</span> <span class="st">&quot;medications_male&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="fu">renameCohort</span>(</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>    <span class="at">newCohortName =</span> <span class="st">&quot;{cohort_name}_male&quot;</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  )</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">bind</span>(cdm<span class="sc">$</span>medications_female, cdm<span class="sc">$</span>medications_male, <span class="at">name =</span> <span class="st">&quot;medications_sex&quot;</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>medications_sex)</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>medications_sex)</span></code></pre></div>
 <p>The <code>stratifyCohorts()</code> function will produce a similar
 output but it relies on a column being already created so let’s first
 add a column sex to my existent cohort:</p>
@@ -455,9 +448,7 @@ in 1990 and ends in 1991, then their contribution will be split into the
 two years, so we expect to see 4 cohort contributions for this subject
 (2 in 1990, 1 in 1991 and 1 in 1992):</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>cdm<span class="sc">$</span>medications_year <span class="sc">|&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">4383</span>)</span></code></pre></div>
-<p>Let’s disconnect from our cdm object to finish.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">cdmDisconnect</span>(cdm)</span></code></pre></div>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">filter</span>(subject_id <span class="sc">==</span> <span class="dv">4383</span>)</span></code></pre></div>
 </div>
 
 

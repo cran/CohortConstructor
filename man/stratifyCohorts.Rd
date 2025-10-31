@@ -9,8 +9,7 @@ stratifyCohorts(
   strata,
   cohortId = NULL,
   removeStrata = TRUE,
-  name = tableName(cohort),
-  .softValidation = TRUE
+  name = tableName(cohort)
 )
 }
 \arguments{
@@ -25,13 +24,6 @@ removed from the cohort set.}
 \item{removeStrata}{Whether to remove strata columns from final cohort table.}
 
 \item{name}{Name of the new cohort table created in the cdm object.}
-
-\item{.softValidation}{Whether to perform a soft validation of consistency.
-If set to FALSE four additional checks will be performed: 1) a check that
-cohort end date is not before cohort start date,  2) a check that there
-are no missing values in required columns, 3) a check that cohort duration is
-all within observation period, and 4) that there are no overlapping
-cohort entries}
 }
 \value{
 Cohort table stratified.
@@ -44,7 +36,7 @@ on specified columns on which to stratify on.
 \donttest{
 library(CohortConstructor)
 library(PatientProfiles)
-
+if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 cdm <- mockCohortConstructor()
 
 cdm$my_cohort <- cdm$cohort1 |>
@@ -59,5 +51,6 @@ cdm$my_cohort
 settings(cdm$my_cohort)
 
 attrition(cdm$my_cohort)
+}
 }
 }

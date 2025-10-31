@@ -12,7 +12,6 @@
 #' @inheritParams nameDoc
 #' @inheritParams conceptSetDoc
 #' @inheritParams atFirstDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table
 #'
@@ -21,12 +20,15 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#' cdm <- mockCohortConstructor(conditionOccurrence = TRUE)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
+#'
 #' cdm$cohort2 <-  requireConceptIntersect(
 #'   cohort = cdm$cohort1,
 #'   conceptSet = list(a = 194152),
 #'   window = c(-Inf, 0),
 #'   name = "cohort2")
+#'   }
 #'   }
 requireConceptIntersect <- function(cohort,
                                     conceptSet,
@@ -39,18 +41,16 @@ requireConceptIntersect <- function(cohort,
                                     inObservation = TRUE,
                                     censorDate = NULL,
                                     atFirst = FALSE,
-                                    name = tableName(cohort),
-                                    .softValidation = TRUE) {
+                                    name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  validateCohortColumn(indexDate, cohort, class = "Date")
+  validateCohortColumn(indexDate, cohort, class = "date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   window <- omopgenerics::validateWindowArgument(window)
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   intersections <- validateIntersections(intersections)
   conceptSet <- omopgenerics::validateConceptSetArgument(conceptSet, cdm)
-  omopgenerics::assertLogical(.softValidation, length = 1)
   omopgenerics::assertLogical(atFirst, length = 1)
 
   if (length(cohortId) == 0) {
@@ -161,7 +161,7 @@ requireConceptIntersect <- function(cohort,
       logPrefix = "CohortConstructor_requireConceptIntersect_join_"
     ) |>
     omopgenerics::newCohortTable(
-      .softValidation = .softValidation, cohortCodelistRef = newCodelist
+      .softValidation = TRUE, cohortCodelistRef = newCodelist
     ) |>
     omopgenerics::recordCohortAttrition(reason = reason, cohortId = cohortId)
 
@@ -195,4 +195,47 @@ getIntersectionCodelist <- function(cohort, cohortId, codelist) {
     dplyr::union(intersectCodelist) |>
     dplyr::arrange(.data$cohort_definition_id)
   return(newCodelist)
+}
+
+applyRequirement <- function(newCohort, atFirst, tmpNewCohort, intersectCol, lower_limit, upper_limit, cdm) {
+  if (atFirst) {
+    tmpNewCohortFirst <- paste0(tmpNewCohort, "_1")
+    newCohortFirst <- newCohort |>
+      dplyr::group_by(.data$cohort_definition_id, .data$subject_id) |>
+      dplyr::filter(.data$cohort_start_date == base::min(.data$cohort_start_date)) |>
+      dplyr::ungroup() |>
+      dplyr::compute(name = tmpNewCohortFirst, temporary = FALSE,
+                     logPrefix = "CohortConstructor_applyRequirement_subset_arrange_") |>
+      dplyr::filter(
+        .data$rec_id_1234 == 1 & .data[[intersectCol]] >= .env$lower_limit & .data[[intersectCol]] <= .env$upper_limit
+      ) |>
+      dplyr::select(dplyr::all_of(c("cohort_definition_id", "subject_id"))) |>
+      dplyr::compute(name = tmpNewCohortFirst, temporary = FALSE,
+                     logPrefix = "CohortConstructor_applyRequirement_subset_first_")
+    newCohort <- newCohort |>
+      dplyr::inner_join(newCohortFirst, by = c("cohort_definition_id", "subject_id")) |>
+      dplyr::select(!dplyr::all_of(intersectCol)) |>
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
+                     logPrefix = "CohortConstructor_applyRequirement_requirement_first_")
+    omopgenerics::dropSourceTable(cdm = cdm, name = tmpNewCohortFirst)
+  } else {
+    newCohort <- newCohort |>
+      dplyr::filter(
+        .data[[intersectCol]] >= .env$lower_limit & .data[[intersectCol]] <= .env$upper_limit
+      ) |>
+      dplyr::select(!dplyr::all_of(intersectCol)) |>
+      dplyr::compute(name = tmpNewCohort, temporary = FALSE,
+                     logPrefix = "CohortConstructor_applyRequirement_subset_")
+  }
+  return(newCohort)
+}
+
+completeAttritionReason <- function(reason, censorDate, atFirst) {
+  if (!is.null(censorDate)) {
+    reason <- glue::glue("{reason}, censoring at {censorDate}")
+  }
+  if (atFirst) {
+    reason <- glue::glue("{reason}. Requirement applied to the first entry")
+  }
+  return(reason)
 }

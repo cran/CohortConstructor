@@ -8,24 +8,15 @@ knitr::opts_chunk$set(
   comment = "#>",
   eval = NOT_CRAN
 )
-library(CDMConnector)
-library(dplyr, warn.conflicts = FALSE)
-
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-  Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-  downloadEunomiaData()  
-}
 
 ## ----setup--------------------------------------------------------------------
+# library(omock)
 # library(CohortConstructor)
 # library(CohortCharacteristics)
 # library(ggplot2)
 
 ## -----------------------------------------------------------------------------
-# con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-# cdm <- cdmFromCon(con, cdmSchema = "main",
-#                     writeSchema = c(prefix = "my_study_", schema = "main"))
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 ## -----------------------------------------------------------------------------
 # cdm$medications <- conceptCohort(cdm = cdm,
@@ -35,7 +26,7 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 # cohortCount(cdm$medications)
 
 ## -----------------------------------------------------------------------------
-# cdm$medintersect <- CohortConstructor::intersectCohorts(
+# cdm$medintersect <- intersectCohorts(
 #   cohort = cdm$medications,
 #   name = "medintersect"
 # )
@@ -43,16 +34,15 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 # cohortCount(cdm$medintersect)
 
 ## ----include=FALSE, warning=FALSE---------------------------------------------
-# con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-# cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main",
-#                     writeSchema = "main", writePrefix = "my_study_")
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
+# 
 # cdm$medications <- conceptCohort(cdm = cdm,
 #                                  conceptSet = list("diclofenac" = 1124300,
 #                                                    "acetaminophen" = 1127433),
 #                                  name = "medications")
 
 ## -----------------------------------------------------------------------------
-# cdm$medintersect <- CohortConstructor::intersectCohorts(
+# cdm$medintersect <- intersectCohorts(
 #   cohort = cdm$medications,
 #   gap = 365,
 #   name = "medintersect"
@@ -61,7 +51,7 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 # cohortCount(cdm$medintersect)
 
 ## -----------------------------------------------------------------------------
-# cdm$medunion <- CohortConstructor::unionCohorts(
+# cdm$medunion <- unionCohorts(
 #   cohort = cdm$medications,
 #   name = "medunion"
 # )
@@ -69,16 +59,15 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 # cohortCount(cdm$medunion)
 
 ## ----include=FALSE, warning=FALSE---------------------------------------------
-# con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-# cdm <- cdmFromCon(con, cdmSchema = "main",
-#                     writeSchema = c(prefix = "my_study_", schema = "main"))
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
+# 
 # cdm$medications <- conceptCohort(cdm = cdm,
 #                                  conceptSet = list("diclofenac" = 1124300,
 #                                                    "acetaminophen" = 1127433),
 #                                  name = "medications")
 
 ## -----------------------------------------------------------------------------
-# cdm$medunion <- CohortConstructor::unionCohorts(
+# cdm$medunion <- unionCohorts(
 #   cohort = cdm$medications,
 #   name = "medunion",
 #   keepOriginalCohorts = TRUE
@@ -87,16 +76,15 @@ if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNO
 # cohortCount(cdm$medunion)
 
 ## ----include=FALSE, warning=FALSE---------------------------------------------
-# con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-# cdm <- cdmFromCon(con, cdmSchema = "main",
-#                     writeSchema = c(prefix = "my_study_", schema = "main"))
+# cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
+# 
 # cdm$medications <- conceptCohort(cdm = cdm,
 #                                  conceptSet = list("diclofenac" = 1124300,
 #                                                    "acetaminophen" = 1127433),
 #                                  name = "medications")
 
 ## -----------------------------------------------------------------------------
-# cdm$medunion <- CohortConstructor::unionCohorts(
+# cdm$medunion <- unionCohorts(
 #   cohort = cdm$medications,
 #   name = "medunion",
 #   gap = 365,

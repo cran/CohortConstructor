@@ -9,7 +9,6 @@
 #' @inheritParams nameDoc
 #' @param strata A strata list that point to columns in cohort table.
 #' @param removeStrata Whether to remove strata columns from final cohort table.
-#' @inheritParams softValidationDoc
 #'
 #' @return Cohort table stratified.
 #'
@@ -19,7 +18,7 @@
 #' \donttest{
 #' library(CohortConstructor)
 #' library(PatientProfiles)
-#'
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #'
 #' cdm$my_cohort <- cdm$cohort1 |>
@@ -35,12 +34,12 @@
 #'
 #' attrition(cdm$my_cohort)
 #'}
+#'}
 stratifyCohorts <- function(cohort,
                             strata,
                             cohortId = NULL,
                             removeStrata = TRUE,
-                            name = tableName(cohort),
-                            .softValidation = TRUE) {
+                            name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
@@ -51,7 +50,6 @@ stratifyCohorts <- function(cohort,
   }
   strata <- omopgenerics::validateStrataArgument(strata, table = cohort)
   omopgenerics::assertLogical(removeStrata, length = 1)
-  omopgenerics::assertLogical(.softValidation)
 
   if (length(cohortId) == 0) {
     cli::cli_inform("Returning empty cohort as `cohortId` is not valid.")
@@ -160,7 +158,7 @@ stratifyCohorts <- function(cohort,
     dplyr::select(!"target_cohort_id")
 
   newCohort <- purrr::reduce(newCohort, dplyr::union_all) |>
-    dplyr::select(!dplyr::all_of(c("target_cohort_id", strataCols[removeStrata]))) |>
+    dplyr::select(!dplyr::any_of(c("target_cohort_id", "id", strataCols[removeStrata]))) |>
     dplyr::relocate(dplyr::all_of(omopgenerics::cohortColumns("cohort"))) |>
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_stratifyCohorts_reduce_") |>
@@ -168,7 +166,7 @@ stratifyCohorts <- function(cohort,
       cohortSetRef = newSettings,
       cohortAttritionRef = newAttrition,
       cohortCodelistRef = newCodelist,
-      .softValidation = .softValidation
+      .softValidation = TRUE
     )
 
   omopgenerics::dropSourceTable(cdm = cdm, name = nm)

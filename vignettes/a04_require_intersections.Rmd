@@ -17,18 +17,12 @@ knitr::opts_chunk$set(
   comment = "#>",
   eval = NOT_CRAN
 )
-
-library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-downloadEunomiaData()  
-}
-
 ```
 
 
 ```{r setup}
+library(omock)
+library(dplyr)
 library(CodelistGenerator)
 library(CohortConstructor)
 library(CohortCharacteristics)
@@ -36,29 +30,10 @@ library(visOmopResults)
 library(ggplot2)
 ```
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  eval = TRUE, message = FALSE, warning = FALSE,
-  comment = "#>"
-)
-
-library(CDMConnector)
-library(dplyr, warn.conflicts = FALSE)
-
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == ""){
-  Sys.setenv("EUNOMIA_DATA_FOLDER" = file.path(tempdir(), "eunomia"))}
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))){ dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-  downloadEunomiaData()  
-}
-```
-
-For this example we'll use the Eunomia synthetic data from the CDMConnector package.
+For this example we'll use the Eunomia synthetic data from the [omock](https://ohdsi.github.io/omock/) package.
 
 ```{r}
-con <- DBI::dbConnect(duckdb::duckdb(), dbdir = eunomiaDir())
-cdm <- CDMConnector::cdmFromCon(con, cdmSchema = "main", 
-                    writeSchema = "main", writePrefix = "my_study_")
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 ```
 
 Let's start by creating a cohort of warfarin users.
@@ -110,6 +85,61 @@ cdm$warfarin_no_gi_bleed <- cdm$warfarin |>
                          name = "warfarin_no_gi_bleed") 
 
 summary_attrition <- summariseCohortAttrition(cdm$warfarin_no_gi_bleed)
+plotCohortAttrition(summary_attrition)
+```
+
+We can also apply restrictions related to multiple cohorts at the same time. Here, for example, we require individuals to be in one of our injury cohorts in the prior year.  
+```{r}
+cdm$injuries <- conceptCohort(
+  cdm = cdm,
+  name = "injuries",
+  conceptSet = list(
+    "ankle_sprain" = 81151,
+    "ankle_fracture" = 4059173,
+    "forearm_fracture" = 4278672,
+    "hip_fracture" = 4230399
+  ),
+  exit = "event_start_date"
+)
+
+
+cdm$warfarin_any_injury <- cdm$warfarin |>
+  requireCohortIntersect(intersections = c(1, Inf),
+                         cohortCombinationCriteria = "any",
+                         targetCohortTable = "injuries", 
+                         indexDate = "cohort_start_date", 
+                         window = c(-Inf, 0), 
+                         name = "warfarin_any_injury") 
+
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
+plotCohortAttrition(summary_attrition)
+```
+
+We could instead require them to be in all of our injury cohorts
+```{r}
+cdm$warfarin_any_injury <- cdm$warfarin |>
+  requireCohortIntersect(intersections = c(1, Inf),
+                         cohortCombinationCriteria = "all",
+                         targetCohortTable = "injuries", 
+                         indexDate = "cohort_start_date", 
+                         window = c(-Inf, 0), 
+                         name = "warfarin_any_injury") 
+
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
+plotCohortAttrition(summary_attrition)
+```
+
+Or, we could require them to be in at least 2 of our injury cohorts
+```{r}
+cdm$warfarin_any_injury <- cdm$warfarin |>
+  requireCohortIntersect(intersections = c(1, Inf),
+                         cohortCombinationCriteria = c(2, Inf),
+                         targetCohortTable = "injuries", 
+                         indexDate = "cohort_start_date", 
+                         window = c(-Inf, 0), 
+                         name = "warfarin_any_injury") 
+
+summary_attrition <- summariseCohortAttrition(cdm$warfarin_any_injury)
 plotCohortAttrition(summary_attrition)
 ```
 

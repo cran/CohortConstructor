@@ -9,7 +9,6 @@
 #' @inheritParams nameDoc
 #' @inheritParams requireDemographicsDoc
 #' @inheritParams atFirstDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return The cohort table with only records for individuals satisfying the
 #' demographic requirements
@@ -18,12 +17,15 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
-#' cdm <- mockCohortConstructor(nPerson = 100)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
+#'
 #' cdm$cohort1 |>
 #'   requireDemographics(indexDate = "cohort_start_date",
 #'                       ageRange = list(c(18, 65)),
 #'                       sex = "Female",
 #'                       minPriorObservation = 365)
+#' }
 #' }
 requireDemographics <- function(cohort,
                                 cohortId = NULL,
@@ -33,8 +35,7 @@ requireDemographics <- function(cohort,
                                 minPriorObservation = 0,
                                 minFutureObservation = 0,
                                 atFirst = FALSE,
-                                name = tableName(cohort),
-                                .softValidation = TRUE) {
+                                name = tableName(cohort)) {
   cohort <- demographicsFilter(
     cohort = cohort,
     cohortId = cohortId,
@@ -48,8 +49,7 @@ requireDemographics <- function(cohort,
     reqSex = TRUE,
     reqPriorObservation = TRUE,
     reqFutureObservation = TRUE,
-    atFirst = atFirst,
-    .softValidation = .softValidation
+    atFirst = atFirst
   )
 
   return(cohort)
@@ -70,18 +70,19 @@ requireDemographics <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   requireAge(indexDate = "cohort_start_date",
 #'              ageRange = list(c(18, 65)))
+#' }
 #' }
 requireAge <- function(cohort,
                        ageRange,
                        cohortId = NULL,
                        indexDate = "cohort_start_date",
                        atFirst = FALSE,
-                       name = tableName(cohort),
-                       .softValidation = TRUE) {
+                       name = tableName(cohort)) {
   cohort <- demographicsFilter(
     cohort = cohort,
     cohortId = cohortId,
@@ -95,8 +96,7 @@ requireAge <- function(cohort,
     reqSex = FALSE,
     reqPriorObservation = FALSE,
     reqFutureObservation = FALSE,
-    atFirst = atFirst,
-    .softValidation = .softValidation
+    atFirst = atFirst
   )
 
   return(cohort)
@@ -117,16 +117,17 @@ requireAge <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   requireSex(sex = "Female")
+#' }
 #' }
 requireSex <- function(cohort,
                        sex,
                        cohortId = NULL,
                        atFirst = FALSE,
-                       name = tableName(cohort),
-                       .softValidation = TRUE) {
+                       name = tableName(cohort)) {
   cohort <- demographicsFilter(
     cohort = cohort,
     cohortId = cohortId,
@@ -140,8 +141,7 @@ requireSex <- function(cohort,
     reqSex = TRUE,
     reqPriorObservation = FALSE,
     reqFutureObservation = FALSE,
-    atFirst = atFirst,
-    .softValidation = .softValidation
+    atFirst = atFirst
   )
 
   return(cohort)
@@ -162,18 +162,19 @@ requireSex <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   requirePriorObservation(indexDate = "cohort_start_date",
 #'                           minPriorObservation = 365)
+#' }
 #' }
 requirePriorObservation <- function(cohort,
                                     minPriorObservation,
                                     cohortId = NULL,
                                     indexDate = "cohort_start_date",
                                     atFirst = FALSE,
-                                    name = tableName(cohort),
-                                    .softValidation = TRUE) {
+                                    name = tableName(cohort)) {
   cohort <- demographicsFilter(
     cohort = cohort,
     cohortId = cohortId,
@@ -187,8 +188,7 @@ requirePriorObservation <- function(cohort,
     reqSex = FALSE,
     reqPriorObservation = TRUE,
     reqFutureObservation = FALSE,
-    atFirst = atFirst,
-    .softValidation = .softValidation
+    atFirst = atFirst
   )
 
   return(cohort)
@@ -210,18 +210,19 @@ requirePriorObservation <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   requireFutureObservation(indexDate = "cohort_start_date",
 #'                            minFutureObservation = 30)
+#' }
 #' }
 requireFutureObservation <- function(cohort,
                                      minFutureObservation,
                                      cohortId = NULL,
                                      indexDate = "cohort_start_date",
                                      atFirst = FALSE,
-                                     name = tableName(cohort),
-                                     .softValidation = TRUE) {
+                                     name = tableName(cohort)) {
   cohort <- demographicsFilter(
     cohort = cohort,
     cohortId = cohortId,
@@ -235,8 +236,7 @@ requireFutureObservation <- function(cohort,
     reqSex = FALSE,
     reqPriorObservation = FALSE,
     reqFutureObservation = TRUE,
-    atFirst = atFirst,
-    .softValidation = .softValidation
+    atFirst = atFirst
   )
 
   return(cohort)
@@ -254,17 +254,15 @@ demographicsFilter <- function(cohort,
                                reqSex,
                                reqPriorObservation,
                                reqFutureObservation,
-                               atFirst,
-                               .softValidation) {
+                               atFirst) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  validateCohortColumn(indexDate, cohort, class = "Date")
+  validateCohortColumn(indexDate, cohort, class = "date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   ageRange <- validateDemographicRequirements(ageRange, sex, minPriorObservation, minFutureObservation)
   ids <- omopgenerics::settings(cohort)$cohort_definition_id
-  omopgenerics::assertLogical(.softValidation, length = 1)
   omopgenerics::assertLogical(atFirst, length = 1)
 
   if (length(cohortId) == 0) {
@@ -286,7 +284,12 @@ demographicsFilter <- function(cohort,
   # new settings
   ind <- reqCols %in% colnames(settings(cohort))
   if (any(ind)) {
-    cli::cli_warn("{reqCols[ind]} column{?s} are already in settings and will be overwritten")
+    # only if the setting is not NA (eg been applied to a different cohort)
+    if(nrow(settings(cohort) |>
+      dplyr::filter(dplyr::if_all(dplyr::any_of(reqCols), ~ !is.na(.))) |>
+      dplyr::filter(.data$cohort_definition_id %in% cohortId)) > 0){
+      cli::cli_warn("{reqCols[ind]} column{?s} are already in settings and will be overwritten")
+    }
   }
   newSet <- settings(cohort) |>
     dplyr::select(!dplyr::any_of(reqCols)) |>
@@ -333,7 +336,7 @@ demographicsFilter <- function(cohort,
   if (is.infinite(min_age)) min_age <- 0
   if (is.infinite(max_age)) max_age <- 200
   filterAge <- glue::glue(".data${newCols[1]} >= {min_age} & .data${newCols[1]} <= {max_age}") |> rlang::parse_exprs()
-  filterSex <- glue::glue(".data${newCols[2]} == '{sex}' | .env$sex == 'Both'") |> rlang::parse_exprs()
+  filterSex <- glue::glue(".data${newCols[2]} == '{sex}' | (.env$sex == 'Both' & .data${newCols[2]} %in% c('Female', 'Male'))") |> rlang::parse_exprs()
   filterPriorObservation <- glue::glue(".data${newCols[3]} >= {minPriorObservation}") |> rlang::parse_exprs()
   filterFutureObservation <- glue::glue(".data${newCols[4]} >= {minFutureObservation}") |> rlang::parse_exprs()
   atFirstReason <- NULL
@@ -405,7 +408,7 @@ demographicsFilter <- function(cohort,
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_demographicsFilter_name_") |>
     omopgenerics::newCohortTable(
-      .softValidation = .softValidation, cohortSetRef = newSet
+      .softValidation = TRUE, cohortSetRef = newSet
     )
 
   omopgenerics::dropSourceTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))

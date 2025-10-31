@@ -12,7 +12,6 @@
 #' @param indexDate Name of the column in the cohort that contains the date of
 #' interest.
 #' @inheritParams atFirstDoc
-#' @inheritParams softValidationDoc
 #'
 #' @return The cohort table with any cohort entries outside of the date range
 #' dropped
@@ -21,27 +20,27 @@
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
+#' cdm <- mockCohortConstructor()
 #'
-#' cdm <- mockCohortConstructor(nPerson = 100)
 #' cdm$cohort1 |>
 #'   requireInDateRange(indexDate = "cohort_start_date",
 #'                      dateRange = as.Date(c("2010-01-01", "2019-01-01")))
+#' }
 #' }
 requireInDateRange <- function(cohort,
                                dateRange,
                                cohortId = NULL,
                                indexDate = "cohort_start_date",
                                atFirst = FALSE,
-                               name = tableName(cohort),
-                               .softValidation = TRUE) {
+                               name = tableName(cohort)) {
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  validateCohortColumn(indexDate, cohort, class = "Date")
+  validateCohortColumn(indexDate, cohort, class = "date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   dateRange <- validateDateRange(dateRange)
-  omopgenerics::assertLogical(.softValidation, length = 1)
   omopgenerics::assertLogical(atFirst, length = 1)
 
   if (length(cohortId) == 0) {
@@ -143,7 +142,7 @@ requireInDateRange <- function(cohort,
     dplyr::compute(name = name, temporary = FALSE,
                    logPrefix = "CohortConstructor_requireDateRange_name_") |>
     omopgenerics::newCohortTable(
-      .softValidation = .softValidation, cohortAttritionRef = attrition(newCohort)
+      .softValidation = TRUE, cohortAttritionRef = attrition(newCohort)
     )
 
   useIndexes <- getOption("CohortConstructor.use_indexes")
@@ -183,12 +182,14 @@ requireInDateRange <- function(cohort,
 #' @examples
 #' \donttest{
 #' library(CohortConstructor)
+#' if(isTRUE(omock::isMockDatasetDownloaded("GiBleed"))){
 #' cdm <- mockCohortConstructor()
 #' cdm$cohort1 |>
 #'   trimToDateRange(startDate = "cohort_start_date",
 #'                   endDate = "cohort_end_date",
 #'                   dateRange = as.Date(c("2015-01-01",
 #'                                         "2015-12-31")))
+#' }
 #' }
 trimToDateRange <- function(cohort,
                             dateRange,
@@ -200,8 +201,8 @@ trimToDateRange <- function(cohort,
   # checks
   name <- omopgenerics::validateNameArgument(name, validation = "warning")
   cohort <- omopgenerics::validateCohortArgument(cohort)
-  validateCohortColumn(startDate, cohort, class = "Date")
-  validateCohortColumn(endDate, cohort, class = "Date")
+  validateCohortColumn(startDate, cohort, class = "date")
+  validateCohortColumn(endDate, cohort, class = "date")
   cdm <- omopgenerics::validateCdmArgument(omopgenerics::cdmReference(cohort))
   cohortId <- omopgenerics::validateCohortIdArgument({{cohortId}}, cohort, validation = "warning")
   dateRange <- validateDateRange(dateRange)
