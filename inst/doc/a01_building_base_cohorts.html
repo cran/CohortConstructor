@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -60,7 +61,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -545,11 +546,11 @@ than only the standard concept_id fields, we can set
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="fu">glimpse</span>()</span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; Rows: ??</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Columns: 4</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Database: DuckDB v1.3.1 [root@Darwin 24.6.0:R 4.5.1//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/Rtmpltb5fP/file18a6287d693d.duckdb]</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Database: DuckDB 1.4.3-dev218 [root@Darwin 25.2.0:R 4.5.2//private/var/folders/sw/rd8zn92n2nz45cfcc5dcs_080000gr/T/RtmpoQD9Ab/file5dbe115d19ff.duckdb]</span></span>
 <span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; $ cohort_definition_id &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; $ subject_id           &lt;int&gt; 1246, 2914, 3437, 4704, 2589, 3622, 1737, 66, 648…</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; $ cohort_start_date    &lt;date&gt; 1980-08-23, 1997-03-09, 1955-03-03, 2010-07-25, …</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; $ cohort_end_date      &lt;date&gt; 1980-08-23, 1997-03-09, 1955-03-03, 2010-07-25, …</span></span></code></pre></div>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; $ subject_id           &lt;int&gt; 1265, 1908, 2243, 3114, 4319, 825, 3295, 3268, 16…</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; $ cohort_start_date    &lt;date&gt; 2017-12-18, 2002-12-16, 2005-09-03, 1983-02-21, …</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; $ cohort_end_date      &lt;date&gt; 2017-12-18, 2002-12-16, 2005-09-03, 1983-02-21, …</span></span></code></pre></div>
 </div>
 <div id="demographic-based-cohort-creation" class="section level2">
 <h2>Demographic based cohort creation</h2>
@@ -717,7 +718,7 @@ concept OR has a normal BMI score then it is included in the cohort.</p>
 <span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; 2                    2 bmi_overweight 5.3         mock</span></span>
 <span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>cdm<span class="sc">$</span>cohort</span>
 <span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;cohort&gt; [?? x 4]</span></span>
-<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.6.0:R 4.5.1/:memory:]</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB 1.4.3-dev218 [root@Darwin 25.2.0:R 4.5.2/:memory:]</span></span>
 <span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; # ℹ 4 variables: cohort_definition_id &lt;int&gt;, subject_id &lt;int&gt;,</span></span>
 <span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; #   cohort_start_date &lt;date&gt;, cohort_end_date &lt;date&gt;</span></span></code></pre></div>
 <p>As you can see in the above code, the concept set is the list of BMI
@@ -751,7 +752,7 @@ TRUE.</p>
 <span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt; 1                    1 bmi_normal  5.3         mock</span></span>
 <span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>cdm<span class="sc">$</span>cohort</span>
 <span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="co">#&gt; # Source:   table&lt;cohort&gt; [?? x 4]</span></span>
-<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB v1.3.1 [root@Darwin 24.6.0:R 4.5.1/:memory:]</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt; # Database: DuckDB 1.4.3-dev218 [root@Darwin 25.2.0:R 4.5.2/:memory:]</span></span>
 <span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co">#&gt; # ℹ 4 variables: cohort_definition_id &lt;int&gt;, subject_id &lt;int&gt;,</span></span>
 <span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="co">#&gt; #   cohort_start_date &lt;date&gt;, cohort_end_date &lt;date&gt;</span></span></code></pre></div>
 </div>

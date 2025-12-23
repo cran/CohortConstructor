@@ -1,6 +1,6 @@
 Package: CohortConstructor
 Title: Build and Manipulate Study Cohorts Using a Common Data Model
-Version: 0.6.0
+Version: 0.6.1
 Authors@R: c(
     person("Edward", "Burn", , "edward.burn@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9286-1128")),
@@ -26,13 +26,13 @@ License: Apache License (>= 2)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Imports: cli, clock, dplyr, glue, omopgenerics (>= 1.3.2),
-        PatientProfiles (>= 1.4.4), purrr, rlang, tidyr, utils
-Suggests: CDMConnector (>= 1.7.0), CirceR, CodelistGenerator (>=
-        3.4.1), CohortCharacteristics, covr, DBI, DiagrammeR,
-        DrugUtilisation, duckdb, ggplot2, ggpubr, gt, here,
-        IncidencePrevalence, knitr, odbc, omock (>= 0.5.0), rmarkdown,
-        RPostgres, scales, SqlRender, stringr, testthat (>= 3.0.0),
-        tictoc, visOmopResults
+        PatientProfiles (>= 1.4.4), CodelistGenerator (>= 4.0.0),
+        purrr, rlang, tidyr, utils
+Suggests: CDMConnector (>= 1.7.0), CirceR, CohortCharacteristics, covr,
+        DBI, DiagrammeR, DrugUtilisation, duckdb, ggplot2, ggpubr, gt,
+        here, IncidencePrevalence, knitr, odbc, omock (>= 0.5.0),
+        rmarkdown, RPostgres, scales, SqlRender, stringr, testthat (>=
+        3.0.0), tictoc, visOmopResults
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 VignetteBuilder: knitr
@@ -41,7 +41,7 @@ URL: https://ohdsi.github.io/CohortConstructor/,
         https://github.com/OHDSI/CohortConstructor
 LazyData: true
 NeedsCompilation: no
-Packaged: 2025-10-31 15:13:38 UTC; orms0426
+Packaged: 2025-12-22 16:48:32 UTC; orms0426
 Author: Edward Burn [aut, cre] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
   Martí Català [aut] (ORCID: <https://orcid.org/0000-0003-3308-9905>),
   Nuria Mercade-Besora [aut] (ORCID:
@@ -55,4 +55,4 @@ Author: Edward Burn [aut, cre] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
   Elin Rowlands [aut] (ORCID: <https://orcid.org/0009-0005-5166-0417>)
 Maintainer: Edward Burn <edward.burn@ndorms.ox.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-10-31 15:50:02 UTC
+Date/Publication: 2025-12-23 06:10:49 UTC
